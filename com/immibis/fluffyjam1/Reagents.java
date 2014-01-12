@@ -18,6 +18,7 @@ public class Reagents {
 	
 	/** Sets the amount of one reagent */
 	public void set(int id, float val) {
+		total += val - amount[id];
 		amount[id] = val;
 	}
 	
@@ -44,5 +45,42 @@ public class Reagents {
 		total = 0;
 		for(int i = Reagent.COUNT-1; i >= 0; i--)
 			total += amount[i];
+	}
+
+	public void copyTo(Reagents dest) {
+		for(int i = Reagent.COUNT-1; i >= 0; i--)
+			dest.amount[i] = amount[i];
+		dest.total = total;
+		dest.capacity = capacity;
+	}
+
+	public void addRespectingCapacity(int id, float amt) {
+		amt = Math.min(amt, capacity - total);
+		if(amt > 0)
+			set(id, get(id) + amt);
+	}
+
+	public void remove(Reagents what) {
+		for(int i = Reagent.COUNT-1; i >= 0; i--)
+			amount[i] = Math.max(0, amount[i] - what.amount[i]);
+		calc_total();
+	}
+	
+	public void remove(float fraction) {
+		fraction = 1-fraction;
+		for(int i = Reagent.COUNT-1; i >= 0; i--)
+			amount[i] *= fraction;
+		calc_total();
+	}
+
+	public Reagents getVolume(float amt) {
+		return total < 0.0001 ? new Reagents() : getFraction(amt / total);
+	}
+
+	public Reagents getFraction(float f) {
+		Reagents rv = new Reagents();
+		for(int i = Reagent.COUNT-1; i >= 0; i--)
+			rv.set(i, get(i) * f);
+		return rv;
 	}
 }
