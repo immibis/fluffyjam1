@@ -2,7 +2,6 @@ package com.immibis.fluffyjam1;
 
 public final class Reagent {
 	
-	
 	public static final int R_FOOD = 0;
 	public static final int R_BLOOD = 1;
 	public static final int R_OXYGEN = 2;

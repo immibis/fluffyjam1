@@ -22,9 +22,9 @@ public final class Guts implements Serializable {
 		"     X           |  "+
 		"     |           T  "+
 		"     |           |  "+
-		"     O           X  "+
+		"     1           X  "+
 		"                 |  "+
-		"                 O  ";
+		"                 2  ";
 	
 	public static final int W = 20, H = 15;
 	
@@ -53,7 +53,8 @@ public final class Guts implements Serializable {
 			case 'T': rv[k] = new TankTile(); break;
 			case 'B': rv[k] = new BrainTile(); break;
 			case 'K': rv[k] = new KidneyTile(); break;
-			case 'O': rv[k] = new OrificeTile(); break;
+			case '1': rv[k] = new OrificeTile(1); break;
+			case '2': rv[k] = new OrificeTile(2); break;
 			case 'X': rv[k] = new ValveTile(); break;
 			default:
 				throw new AssertionError("invalid char "+s.charAt(k));
@@ -73,7 +74,21 @@ public final class Guts implements Serializable {
 	public static final int DM_R = 8;
 	
 	public static final float TARGET_BLOOD_PRESSURE = 0.1f;
-	public static final float TARGET_BLOOD_WATER = 0.3f;
+	public static final float MAX_BLOOD_WATER = 0.5f; // water as a percentage of blood volume (not total); kidneys will excrete excess 
+	
+	// energy units
+	public static final float METAB_RATE_BRAIN = 0.03f;
+	public static final float METAB_RATE_HEART = 0.005f;
+	
+	
+	// The amount of oxygen and food used, and mwaste produced, per energy unit (in mL/EU)
+	public static final float BASE_METABOLIC_OXYGEN_RATIO = 1;
+	public static final float BASE_METABOLIC_FOOD_RATIO = 1;
+	public static final float BASE_METABOLIC_WASTE_RATIO = 1;
+	
+	// amount of food/tick expected to be used when not doing anything
+	public static final float FOOD_USE_RATE_IDLE = (METAB_RATE_BRAIN + METAB_RATE_HEART) * BASE_METABOLIC_FOOD_RATIO;
+	
 	
 	public static class Tile implements Serializable {
 		private static final long serialVersionUID = 1L;
@@ -98,11 +113,6 @@ public final class Guts implements Serializable {
 		public List<String> describe() {
 			return Collections.emptyList();
 		}
-		
-		// The amount of oxygen and food used, and mwaste produced, per energy unit
-		public static final float BASE_METABOLIC_OXYGEN_RATIO = 1;
-		public static final float BASE_METABOLIC_FOOD_RATIO = 1;
-		public static final float BASE_METABOLIC_WASTE_RATIO = 1;
 		
 		/**
 		 * Helper method to try to consume some energy and oxygen.
@@ -151,7 +161,9 @@ public final class Guts implements Serializable {
 		static EmptyTile instance = new EmptyTile();
 	}
 	
-	public static class MouthTile extends Tile {
+	public Reagents mouthBuffer = new Reagents();
+	
+	public class MouthTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
 		MouthTile() {
@@ -162,10 +174,13 @@ public final class Guts implements Serializable {
 		
 		@Override
 		public void tick() {
-			if((++ticks) % 100 == 0) {
-				nets[D_D].new_contents.addRespectingCapacity(Reagent.R_FOOD, 50.0f);
-				nets[D_D].new_contents.addRespectingCapacity(Reagent.R_WATER, 5000.0f);
-			}
+			//if((++ticks) % 100 == 0) {
+			//	nets[D_D].new_contents.set(Reagent.R_FOOD, 80.0f);
+			//	nets[D_D].new_contents.set(Reagent.R_WATER, 30.0f);
+			//}
+			if(mouthBuffer.getTotal() > 0)
+				mouthBuffer = mouthBuffer;
+			mouthBuffer.pourInto(nets[D_D].new_contents);
 		}
 	}
 	
@@ -233,7 +248,7 @@ public final class Guts implements Serializable {
 			Reagents transfer = nets[D_R].contents.getVolume(flow);
 			nets[D_R].new_contents.remove(transfer);
 			
-			float energy = metabolize(transfer, transfer, 1, 1);
+			float energy = metabolize(transfer, transfer, METAB_RATE_HEART, 1);
 			
 			transfer.pourInto(nets[D_L].new_contents);
 			transfer.pourInto(nets[D_R].new_contents);
@@ -254,6 +269,9 @@ public final class Guts implements Serializable {
 		public void tick() {
 			float flow = calcFlow(nets[D_L], nets[D_R]);
 			
+			checkCap(nets[D_L]);
+			checkCap(nets[D_R]);
+			
 			if(flow > 0) {
 				doKidneyStuff(nets[D_L], nets[D_R], flow);
 			} else {
@@ -261,6 +279,16 @@ public final class Guts implements Serializable {
 			}
 		}
 		
+		private void checkCap(PipeNetwork pn) {
+			if(pn.contents.getTotal() > pn.contents.capacity * 0.9f) {
+				Reagents remove = pn.contents.getVolume(pn.contents.getTotal() - pn.contents.capacity * 0.9f);
+				pn.new_contents.remove(remove);
+				remove.set(Reagent.R_BLOOD, 0);
+				remove.pourInto(nets[D_D].new_contents);
+				pn.new_contents.add(remove);
+			}
+		}
+
 		private void doKidneyStuff(PipeNetwork from, PipeNetwork to, float flow) {
 			
 			Reagents transfer = from.contents.getVolume(flow);
@@ -278,7 +306,7 @@ public final class Guts implements Serializable {
 			final float MWASTE_REMOVE_RATE = 0.8f;
 			
 			float transfer_water_pct = transfer.get(Reagent.R_WATER) / transfer.get(Reagent.R_BLOOD);
-			float transfer_excess_water = Math.max(0, transfer.get(Reagent.R_WATER) * (transfer_water_pct - TARGET_BLOOD_WATER)); 
+			float transfer_excess_water = Math.max(0, transfer.get(Reagent.R_WATER) * (transfer_water_pct - MAX_BLOOD_WATER)); 
 			float water_removed = Math.min(transfer.get(Reagent.R_WATER), Math.max(transfer.get(Reagent.R_MWASTE) * MWASTE_REMOVE_RATE * WATER_TO_MWASTE_RATIO, transfer_excess_water * EXCESS_WATER_REMOVE_RATE));
 			float mwaste_removed = Math.min(transfer.get(Reagent.R_MWASTE), water_removed / WATER_TO_MWASTE_RATIO);
 			
@@ -311,11 +339,14 @@ public final class Guts implements Serializable {
 			initNet(DM_D | DM_R);
 		}
 		
-		boolean open = true;
+		boolean open = false;
 		
 		@Override
 		public void tick() {
 			if(open) {
+				if(nets[D_U].new_contents.getTotal() < 3)
+					open = false;
+				
 				nets[D_U].new_contents.pourInto(nets[D_D].new_contents);
 				/*float flow = calcFlow(nets[D_U], nets[D_D]);
 				if(flow > 0) {
@@ -334,8 +365,11 @@ public final class Guts implements Serializable {
 	public class OrificeTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
-		OrificeTile() {
+		int number;
+		
+		OrificeTile(int number) {
 			initNet(DM_U | DM_D | DM_L | DM_R);
+			this.number = number;
 		}
 		
 		//boolean open = false;
@@ -353,7 +387,7 @@ public final class Guts implements Serializable {
 				Reagents transfer = pn.new_contents.getFraction(1);
 				pn.new_contents.remove(transfer);
 				if(listener != null)
-					listener.eject(transfer);
+					listener.eject(transfer, this.number);
 			//}
 		}
 	}
@@ -383,7 +417,7 @@ public final class Guts implements Serializable {
 			
 			float avail_water = transfer.get(Reagent.R_WATER);
 			if(avail_water > 0)
-				transfer.remove(Reagent.R_WATER, new_blood.add(Reagent.R_WATER, avail_water * 0.5f));
+				transfer.remove(Reagent.R_WATER, new_blood.addRespectingCapacity(Reagent.R_WATER, avail_water * 0.8f));
 			
 			
 			
@@ -393,7 +427,13 @@ public final class Guts implements Serializable {
 		}
 	}
 	
-	public static class BrainTile extends Tile {
+	// 0 = dead, 0-0.5 = coma, 0.5-1 = various symptoms, 0 = normal
+	public float brain_function;
+	
+	// 0 = empty, 1 = full
+	public float bladder, poop;
+	
+	public class BrainTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
 		BrainTile() {
@@ -404,7 +444,23 @@ public final class Guts implements Serializable {
 		public void tick() {
 			PipeNetwork blood = nets[D_D];
 			
-			metabolize(blood.contents, blood.new_contents, 100, 1);
+			float energy = metabolize(blood.contents, blood.new_contents, METAB_RATE_BRAIN, 1);
+			float mwaste_pct = blood.contents.get(Reagent.R_MWASTE) / blood.contents.get(Reagent.R_BLOOD);
+			float stool_pct = blood.contents.get(Reagent.R_STOOL) / blood.contents.get(Reagent.R_BLOOD);
+
+			// normal: <10, coma: 100+, death: 200+
+			float toxin_rel = (blood.contents.get(Reagent.R_MWASTE) + blood.contents.get(Reagent.R_URINE)*2 + blood.contents.get(Reagent.R_STOOL)*5) / blood.contents.get(Reagent.R_BLOOD) * 70;
+			
+			if(toxin_rel < 10)
+				brain_function = 1;
+			else if(toxin_rel < 200)
+				brain_function = 1 - toxin_rel / 200;
+			else
+				brain_function = 0;
+			
+			float energy_avail_pct = energy / METAB_RATE_BRAIN;
+			if(energy_avail_pct < 0.05f)
+				brain_function = Math.min(brain_function, 0.6f);
 		}
 	}
 	
@@ -431,7 +487,7 @@ public final class Guts implements Serializable {
 		}
 	}
 	
-	public static class TankTile extends Tile {
+	public class TankTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
 		Reagents r = new Reagents();
@@ -439,7 +495,7 @@ public final class Guts implements Serializable {
 		public TankTile() {
 			initNet(DM_L | DM_U);
 			initNet(DM_D | DM_R);
-			r.capacity = 2000; 
+			r.capacity = 1000;
 			internal_net.contents = internal_net.new_contents = r;
 		}
 		
@@ -459,6 +515,11 @@ public final class Guts implements Serializable {
 			float flow = calcFlow(internal_net, out) + 10;
 			
 			transfer = r.getVolume(flow);
+			
+			if(r.get(Reagent.R_STOOL) > 0)
+				poop = r.getTotal() / r.capacity;
+			if(r.get(Reagent.R_URINE) > 0)
+				bladder = r.getTotal() / r.capacity;
 		}
 		
 		@Override
@@ -494,7 +555,7 @@ public final class Guts implements Serializable {
 		PipeNetwork getRoot() {if(parent != null) return parent = parent.getRoot(); else return this;}
 	}
 	
-	private Tile[] tiles = new Tile[W*H];
+	Tile[] tiles = new Tile[W*H];
 	private Reagents leaked_reagents;
 	
 	{

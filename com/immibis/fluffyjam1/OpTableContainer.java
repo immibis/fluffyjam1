@@ -45,7 +45,7 @@ public class OpTableContainer extends Container {
 		if(par1iCrafting instanceof EntityPlayerMP) {
 			Packet250CustomPayload packet = new Packet250CustomPayload();
 			packet.channel = CHANNEL;
-			packet.data = IOUtils.toBytes(PlayerGuts.get((EntityPlayerMP)operee).data);
+			packet.data = IOUtils.toBytes(PlayerExtData.get((EntityPlayerMP)operee).data);
 			packet.length = packet.data.length;
 			PacketDispatcher.sendPacketToPlayer(packet, (Player)par1iCrafting);
 		}

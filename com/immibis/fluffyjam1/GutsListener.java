@@ -1,7 +1,7 @@
 package com.immibis.fluffyjam1;
 
 public interface GutsListener {
-
-	void eject(Reagents r);
+	
+	void eject(Reagents r, int place);
 
 }

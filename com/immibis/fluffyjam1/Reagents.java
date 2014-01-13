@@ -60,10 +60,11 @@ public class Reagents implements Serializable {
 		dest.capacity = capacity;
 	}
 
-	public void addRespectingCapacity(int id, float amt) {
+	public float addRespectingCapacity(int id, float amt) {
 		amt = Math.min(amt, capacity - total);
-		if(amt > 0)
-			set(id, get(id) + amt);
+		if(amt < 0) amt = 0;
+		set(id, get(id) + amt);
+		return amt;
 	}
 
 	/** Sets 'what' to contain the amount of stuff actually removed. */
