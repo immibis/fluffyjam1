@@ -3,10 +3,11 @@ package com.immibis.fluffyjam1;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.ChatMessageComponent;
 import net.minecraft.world.World;
 import net.minecraftforge.common.IExtendedEntityProperties;
 
-public class PlayerGuts implements IExtendedEntityProperties {
+public class PlayerGuts implements IExtendedEntityProperties, GutsListener {
 
 	public static final String EXT_PROP_ID = "FJ1IMBGT";
 	
@@ -29,6 +30,7 @@ public class PlayerGuts implements IExtendedEntityProperties {
 	public void init(Entity entity, World world) {
 		player = (EntityPlayerMP)entity;
 		data = new Guts();
+		data.listener = this;
 	}
 
 	public void tick() {
@@ -37,6 +39,18 @@ public class PlayerGuts implements IExtendedEntityProperties {
 	
 	public static PlayerGuts get(EntityPlayerMP pl) {
 		return (PlayerGuts)pl.getExtendedProperties(EXT_PROP_ID);
+	}
+	
+	Reagents eject_buffer = new Reagents();
+	@Override
+	public void eject(Reagents r) {
+		eject_buffer.add(r);
+		
+		for(int k = 0; k < Reagent.COUNT; k++)
+			while(eject_buffer.get(k) > 100) {
+				eject_buffer.remove(k, 100);
+				player.sendChatToPlayer(ChatMessageComponent.createFromText("Dropped some "+Reagent.NAME[k]));
+			}
 	}
 
 }

@@ -1,10 +1,12 @@
 package com.immibis.fluffyjam1;
 
+import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Reagents {
+public class Reagents implements Serializable {
+	private static final long serialVersionUID = 1L;
 	
 	// All amounts in mL
 	
@@ -116,7 +118,7 @@ public class Reagents {
 
 	public void add(Reagents what) {
 		for(int i = Reagent.COUNT-1; i >= 0; i--)
-			amount[i] += amount[i] + what.amount[i];
+			amount[i] += what.amount[i];
 		calc_total();
 	}
 

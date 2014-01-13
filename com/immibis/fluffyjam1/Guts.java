@@ -1,11 +1,14 @@
 package com.immibis.fluffyjam1;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public final class Guts {
+public final class Guts implements Serializable {
+	private static final long serialVersionUID = 1L;
+	
 	private static String DEFAULT_SETUP_STR =
 		"     N  M           "+
 		"     |  A----T---A  "+
@@ -24,6 +27,8 @@ public final class Guts {
 		"                 O  ";
 	
 	public static final int W = 20, H = 15;
+	
+	public transient GutsListener listener;
 	
 	private void parse(String s, Tile[] rv) {
 		if(s.length() != rv.length)
@@ -70,7 +75,9 @@ public final class Guts {
 	public static final float TARGET_BLOOD_PRESSURE = 0.1f;
 	public static final float TARGET_BLOOD_WATER = 0.3f;
 	
-	public static class Tile {
+	public static class Tile implements Serializable {
+		private static final long serialVersionUID = 1L;
+		
 		PipeNetwork[] nets = null;
 		
 		protected void initNets(int mask) {
@@ -139,17 +146,23 @@ public final class Guts {
 	}
 	
 	public static class EmptyTile extends Tile {
+		private static final long serialVersionUID = 1L;
+		
 		static EmptyTile instance = new EmptyTile();
 	}
 	
 	public static class MouthTile extends Tile {
+		private static final long serialVersionUID = 1L;
+		
 		MouthTile() {
 			initNets(DM_D);
 		}
 		
+		int ticks = 0;
+		
 		@Override
 		public void tick() {
-			if(Math.random() < 0.01) {
+			if((++ticks) % 100 == 0) {
 				nets[D_D].new_contents.addRespectingCapacity(Reagent.R_FOOD, 50.0f);
 				nets[D_D].new_contents.addRespectingCapacity(Reagent.R_WATER, 5000.0f);
 			}
@@ -157,6 +170,8 @@ public final class Guts {
 	}
 	
 	public static class NoseTile extends Tile {
+		private static final long serialVersionUID = 1L;
+		
 		NoseTile() {
 			initNets(DM_D);
 		}
@@ -174,6 +189,8 @@ public final class Guts {
 	}
 	
 	public static class LungTile extends Tile {
+		private static final long serialVersionUID = 1L;
+		
 		LungTile() {
 			initNets(DM_U | DM_L | DM_R);
 		}
@@ -205,6 +222,8 @@ public final class Guts {
 	}
 	
 	public static class HeartTile extends Tile {
+		private static final long serialVersionUID = 1L;
+		
 		HeartTile() {
 			initNets(DM_L | DM_R);
 		}
@@ -225,6 +244,8 @@ public final class Guts {
 	}
 	
 	public class KidneyTile extends Tile {
+		private static final long serialVersionUID = 1L;
+		
 		KidneyTile() {
 			initNets(DM_L | DM_R | DM_D);
 		}
@@ -283,6 +304,8 @@ public final class Guts {
 	}
 	
 	public class ValveTile extends Tile {
+		private static final long serialVersionUID = 1L;
+		
 		ValveTile() {
 			initNet(DM_U | DM_L);
 			initNet(DM_D | DM_R);
@@ -309,28 +332,35 @@ public final class Guts {
 	}
 	
 	public class OrificeTile extends Tile {
+		private static final long serialVersionUID = 1L;
+		
 		OrificeTile() {
 			initNet(DM_U | DM_D | DM_L | DM_R);
 		}
 		
-		boolean open = false;
+		//boolean open = false;
 		
 		@Override
 		public void tick() {
 			PipeNetwork pn = nets[D_U];
 			
-			if(pn.contents.getTotal() > pn.contents.capacity * 0.9f)
-				open = true;
-			if(pn.contents.getTotal() < pn.contents.capacity * 0.1f)
-				open = false;
+			//if(pn.contents.getTotal() > pn.contents.capacity * 0.9f)
+			//	open = true;
+			//if(pn.contents.getTotal() < pn.contents.capacity * 0.1f)
+			//	open = false;
 			
-			if(open) {
-				pn.new_contents.remove(pn.new_contents.getFraction(1));
-			}
+			//if(open) {
+				Reagents transfer = pn.new_contents.getFraction(1);
+				pn.new_contents.remove(transfer);
+				if(listener != null)
+					listener.eject(transfer);
+			//}
 		}
 	}
 	
 	public static class IntestineTile extends Tile {
+		private static final long serialVersionUID = 1L;
+		
 		IntestineTile() {
 			initNets(DM_U | DM_D);
 			initNet(DM_L | DM_R);
@@ -364,6 +394,8 @@ public final class Guts {
 	}
 	
 	public static class BrainTile extends Tile {
+		private static final long serialVersionUID = 1L;
+		
 		BrainTile() {
 			initNets(DM_D);
 		}
@@ -377,6 +409,8 @@ public final class Guts {
 	}
 	
 	public static class PipeTile extends Tile {
+		private static final long serialVersionUID = 1L;
+		
 		private byte mask;
 		PipeTile(int mask) {
 			this.mask = (byte)mask;
@@ -398,6 +432,8 @@ public final class Guts {
 	}
 	
 	public static class TankTile extends Tile {
+		private static final long serialVersionUID = 1L;
+		
 		Reagents r = new Reagents();
 		PipeNetwork internal_net = new PipeNetwork();
 		public TankTile() {
@@ -432,6 +468,8 @@ public final class Guts {
 	}
 
 	public static class PipeCrossTile extends Tile {
+		private static final long serialVersionUID = 1L;
+		
 		private byte mask1, mask2;
 		PipeCrossTile(int mask1, int mask2) {
 			this.mask1 = (byte)mask1;
@@ -444,7 +482,9 @@ public final class Guts {
 		}
 	}
 	
-	public static class PipeNetwork {
+	public static class PipeNetwork implements Serializable {
+		private static final long serialVersionUID = 1L;
+		
 		Reagents contents, new_contents;
 		int size; // number of tile-sides in this network
 		boolean leak;
@@ -493,16 +533,23 @@ public final class Guts {
 							PipeNetwork pn = n[k];
 							nets.add(n[k] = pn.getRoot());
 							n[k].leak |= pn.leak;
-							n[k].size++;
+							// increment n[k].size if this tile-side is actually connected to another tile-side
+							switch(k) {
+							case D_U: if(y > 0 && tiles[x + (y-1)*W].nets != null && tiles[x + (y-1)*W].nets[D_D] != null) n[k].size++; break;
+							case D_D: if(y<H-1 && tiles[x + (y+1)*W].nets != null && tiles[x + (y+1)*W].nets[D_U] != null) n[k].size++; break;
+							case D_L: if(x > 0 && tiles[(x-1) + y*W].nets != null && tiles[(x-1) + y*W].nets[D_R] != null) n[k].size++; break;
+							case D_R: if(x<W-1 && tiles[(x+1) + y*W].nets != null && tiles[(x+1) + y*W].nets[D_L] != null) n[k].size++; break;
+							}
 						}
 				}
 		
 		this.nets = nets.toArray(new PipeNetwork[nets.size()]);
 		
 		for(PipeNetwork pn : nets) {
+			if(pn.size == 0) pn.size = 1;
 			pn.contents = new Reagents();
 			pn.new_contents = new Reagents();
-			pn.contents.capacity = pn.new_contents.capacity = 60 * pn.size; 
+			pn.contents.capacity = pn.new_contents.capacity = 10 * pn.size; 
 		}
 	}
 	
