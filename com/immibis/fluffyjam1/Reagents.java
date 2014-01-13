@@ -1,5 +1,9 @@
 package com.immibis.fluffyjam1;
 
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
+
 public class Reagents {
 	
 	// All amounts in mL
@@ -60,9 +64,11 @@ public class Reagents {
 			set(id, get(id) + amt);
 	}
 
+	/** Sets 'what' to contain the amount of stuff actually removed. */
 	public void remove(Reagents what) {
-		for(int i = Reagent.COUNT-1; i >= 0; i--)
-			amount[i] = Math.max(0, amount[i] - what.amount[i]);
+		for(int i = Reagent.COUNT-1; i >= 0; i--) {
+			amount[i] -= (what.amount[i] = Math.min(amount[i], what.amount[i]));
+		}
 		calc_total();
 	}
 	
@@ -74,7 +80,7 @@ public class Reagents {
 	}
 
 	public Reagents getVolume(float amt) {
-		return total < 0.0001 ? new Reagents() : getFraction(amt / total);
+		return total < 0.0001 ? new Reagents() : getFraction(Math.min(1, amt / total));
 	}
 
 	public Reagents getFraction(float f) {
@@ -82,5 +88,72 @@ public class Reagents {
 		for(int i = Reagent.COUNT-1; i >= 0; i--)
 			rv.set(i, get(i) * f);
 		return rv;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		for(int k = 0; k < Reagent.COUNT; k++) {
+			if(amount[k] > 0.001) {
+				if(sb.length() > 0)
+					sb.append(", ");
+				sb.append(amount[k]);
+				sb.append(' ');
+				sb.append(Reagent.NAME[k]);
+			}
+		}
+		return sb.toString();
+	}
+	
+	public List<String> describe() {
+		List<String> rv = new ArrayList<String>();
+		DecimalFormat fmt = new DecimalFormat("0.0");
+		for(int k = 0; k < Reagent.COUNT; k++)
+			if(amount[k] > 0.001)
+				rv.add(fmt.format(amount[k])+"mL "+Reagent.NAME[k]);
+		return rv;
+	}
+
+	public void add(Reagents what) {
+		for(int i = Reagent.COUNT-1; i >= 0; i--)
+			amount[i] += amount[i] + what.amount[i];
+		calc_total();
+	}
+
+	/** Returns amount actually removed */
+	public float remove(int id, float amt) {
+		amt = Math.min(amt, amount[id]);
+		set(id, amount[id] - amt);
+		return amt;
+	}
+
+	public float add(int id, float amt) {
+		set(id, amount[id] + amt);
+		return amt;
+	}
+
+	public float getTotal() {
+		return total;
+	}
+	
+	/** Returns the amount of reagent that could be dissolved right not */
+	public float getDissolveSpace(int id) {
+		return Math.max(0, amount[Reagent.R_BLOOD] * Reagent.BLOOD_CAP[id] - amount[id]);
+	}
+
+	/** "Dissolve into blood" some reagent - same as addRespectingCapacity,
+	 * but the capacity used is get(R_BLOOD) * Reagent.BLOOD_CAP[id].
+	 * Returns amount actually dissolved. */
+	public float dissolve(int id, float amt) {
+		float cap = amount[Reagent.R_BLOOD] * Reagent.BLOOD_CAP[id];
+		amt = Math.min(amt, cap - amount[id]);
+		if(amt < 0)
+			return 0;
+		set(id, amount[id] + amt);
+		return amt;
+	}
+
+	public float getRemainingCapacity() {
+		return capacity - total;
 	}
 }

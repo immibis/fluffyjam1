@@ -1,5 +1,9 @@
 package com.immibis.fluffyjam1;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 import net.minecraft.client.gui.GuiWinGame;
@@ -11,7 +15,7 @@ public class OpTableGUI extends GuiContainer {
 	
 	
 	@Override
-	protected void drawGuiContainerBackgroundLayer(float f, int i, int j) {
+	protected void drawGuiContainerBackgroundLayer(float f, int mousex, int mousey) {
 		guiLeft = (width - xSize) / 2;
 		guiTop = (height - ySize) / 2;
 		
@@ -31,6 +35,10 @@ public class OpTableGUI extends GuiContainer {
 					switch(((Guts.PipeTile)t).getMask()) {
 					case Guts.DM_D | Guts.DM_U: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 12, 192, 12, 12); break;
 					case Guts.DM_L | Guts.DM_R: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 0, 192, 12, 12); break;
+					case Guts.DM_U | Guts.DM_D | Guts.DM_R: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 24, 204, 12, 12); break;
+					case Guts.DM_U | Guts.DM_D | Guts.DM_L: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 48, 204, 12, 12); break;
+					case Guts.DM_U | Guts.DM_L | Guts.DM_R: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 36, 216, 12, 12); break;
+					case Guts.DM_D | Guts.DM_L | Guts.DM_R: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 36, 192, 12, 12); break;
 					}
 				} else if(t instanceof Guts.PipeCrossTile) {
 					switch(((Guts.PipeCrossTile)t).getMask1()) {
@@ -42,6 +50,8 @@ public class OpTableGUI extends GuiContainer {
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 0, 216, 12, 12);
 				else if(t instanceof Guts.LungTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 12, 216, 12, 12);
+				else if(t instanceof Guts.IntestineTile)
+					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 12, 228, 12, 12);
 				else if(t instanceof Guts.HeartTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 0, 228, 12, 12);
 				//case TUBE_BSLASH: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 72, 192, 12, 12);
@@ -60,6 +70,10 @@ public class OpTableGUI extends GuiContainer {
 					switch(((Guts.PipeTile)t).getMask()) {
 					case Guts.DM_U | Guts.DM_D: drawReagents(t.nets[Guts.D_U].new_contents, px+3, py, 6, 12); break;
 					case Guts.DM_L | Guts.DM_R: drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 12, 6); break;
+					case Guts.DM_U | Guts.DM_D | Guts.DM_R:
+						drawReagents(t.nets[Guts.D_U].new_contents, px+3, py, 6, 12);
+						drawReagents(t.nets[Guts.D_U].new_contents, px+9, py+3, 3, 6);
+						break;
 					}
 				} else if(t instanceof Guts.PipeCrossTile) {
 					switch(((Guts.PipeCrossTile)t).getMask1()) {
@@ -81,20 +95,28 @@ public class OpTableGUI extends GuiContainer {
 						drawReagents(t.nets[Guts.D_U].new_contents, px+3, py, 6, 12);
 						break;
 					}
-				}
+				} else if(t instanceof Guts.TankTile)
+					drawReagents(((Guts.TankTile)t).r, px+1, py+1, 10, 10);
 			}
 		
 		GL11.glEnd();
 		GL11.glEnable(GL11.GL_TEXTURE_2D);
+		
+		mousex -= guiLeft;
+		mousey -= guiTop;
+		
+		if(Mouse.isButtonDown(0)) {
+			int hoverx = (mousex - 8) / 12, hovery = (mousey - 6) / 12;
+			
+			if(guts.validCoords(hoverx, hovery)) {
+				List<String> desc = guts.getTile(hoverx, hovery).describe();
+				drawHoveringText(desc, guiLeft+mousex, guiTop+mousey, fontRenderer);
+			}
+		}
 	}
 	
 	private void drawReagents(Reagents r, int x, int y, int w, int h) {
-		//float scale = h / r.capacity;
-		float total = 0;
-		
-		//for(int id = 0; id < Reagent.COUNT; id++)
-			//total += r.get(id);
-		total = r.capacity;
+		float total = Math.max(r.getTotal(), r.capacity*0.2f); //r.getTotal(); // r.capacity
 		
 		float _r = 0, _g = 0, _b = 0;
 		
@@ -106,14 +128,6 @@ public class OpTableGUI extends GuiContainer {
 			_r += ((col >> 16) & 255) * _this / total / 255f;
 			_g += ((col >> 8) & 255) * _this / total / 255f;
 			_b += (col & 255) * _this / total / 255f;
-			//float bottom = total * scale;
-			//float top = (total + _this) * scale;
-			
-			//GL11.glColor3ub((byte)(col >> 16), (byte)(col >> 8), (byte)col);
-			//GL11.glVertex2f(guiLeft+x, guiTop+y+h-bottom);
-			//GL11.glVertex2f(guiLeft+x+w, guiTop+y+h-bottom);
-			//GL11.glVertex2f(guiLeft+x+w, guiTop+y+h-top);
-			//GL11.glVertex2f(guiLeft+x, guiTop+y+h-top);
 		}
 		
 		GL11.glColor3f(_r, _g, _b);
