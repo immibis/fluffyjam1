@@ -5,17 +5,28 @@ import java.util.EnumSet;
 import com.jcraft.jorbis.Block;
 
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.network.INetworkManager;
+import net.minecraft.network.NetLoginHandler;
+import net.minecraft.network.packet.NetHandler;
+import net.minecraft.network.packet.Packet1Login;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.world.World;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.ForgeSubscribe;
+import net.minecraftforge.event.entity.EntityEvent;
 
 import cpw.mods.fml.common.ITickHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.Instance;
 import cpw.mods.fml.common.TickType;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.network.IConnectionHandler;
 import cpw.mods.fml.common.network.IGuiHandler;
 import cpw.mods.fml.common.network.NetworkMod;
 import cpw.mods.fml.common.network.NetworkRegistry;
+import cpw.mods.fml.common.network.Player;
 import cpw.mods.fml.common.registry.TickRegistry;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -28,7 +39,6 @@ public class FluffyJam1Mod implements IGuiHandler {
 	public static int GUI_OP_TABLE = 1;
 	
 	
-	
 	public static final boolean SELF_OP_MODE = true; // if true, players operate on themselves, for SSP testing
 	
 	@Instance("immibis_fj1")
@@ -39,6 +49,7 @@ public class FluffyJam1Mod implements IGuiHandler {
 		blockOT = new OpTableBlock(2200);
 		
 		NetworkRegistry.instance().registerGuiHandler(this, this);
+		NetworkRegistry.instance().registerChannel(new OpTableContainer.PacketHandler(), OpTableContainer.CHANNEL);
 		
 		TickRegistry.registerTickHandler(new ITickHandler() {
 			
@@ -59,6 +70,8 @@ public class FluffyJam1Mod implements IGuiHandler {
 						pl.sleepTimer = 98;
 					}
 				}
+				
+				PlayerGuts.get((EntityPlayerMP)pl).tick();
 			}
 			
 			@Override
@@ -94,6 +107,15 @@ public class FluffyJam1Mod implements IGuiHandler {
 				return "immibis_fj3";
 			}
 		}, Side.CLIENT);
+		
+		MinecraftForge.EVENT_BUS.register(this);
+	}
+	
+	@ForgeSubscribe
+	public void onEntityConstruct(EntityEvent.EntityConstructing evt) {
+		if(evt.entity instanceof EntityPlayerMP) {
+			evt.entity.registerExtendedProperties(PlayerGuts.EXT_PROP_ID, new PlayerGuts());
+		}
 	}
 	
 	@SideOnly(Side.CLIENT)

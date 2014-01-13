@@ -54,6 +54,12 @@ public class OpTableGUI extends GuiContainer {
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 12, 228, 12, 12);
 				else if(t instanceof Guts.HeartTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 0, 228, 12, 12);
+				else if(t instanceof Guts.OrificeTile)
+					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 24, 228, 12, 12);
+				else if(t instanceof Guts.BrainTile)
+					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 36, 228, 12, 12);
+				else if(t instanceof Guts.KidneyTile)
+					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 48, 228, 12, 12);
 				//case TUBE_BSLASH: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 72, 192, 12, 12);
 				//case TUBE_FSLASH: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 60, 192, 12, 12);
 				//case TUBE_CROSS: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 84, 192, 12, 12);
@@ -73,6 +79,18 @@ public class OpTableGUI extends GuiContainer {
 					case Guts.DM_U | Guts.DM_D | Guts.DM_R:
 						drawReagents(t.nets[Guts.D_U].new_contents, px+3, py, 6, 12);
 						drawReagents(t.nets[Guts.D_U].new_contents, px+9, py+3, 3, 6);
+						break;
+					case Guts.DM_U | Guts.DM_D | Guts.DM_L:
+						drawReagents(t.nets[Guts.D_U].new_contents, px+3, py, 6, 12);
+						drawReagents(t.nets[Guts.D_U].new_contents, px, py+3, 3, 6);
+						break;
+					case Guts.DM_L | Guts.DM_R | Guts.DM_U:
+						drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 12, 6);
+						drawReagents(t.nets[Guts.D_U].new_contents, px+3, py, 6, 3);
+						break;
+					case Guts.DM_L | Guts.DM_R | Guts.DM_D:
+						drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 12, 6);
+						drawReagents(t.nets[Guts.D_U].new_contents, px+3, py+9, 6, 3);
 						break;
 					}
 				} else if(t instanceof Guts.PipeCrossTile) {

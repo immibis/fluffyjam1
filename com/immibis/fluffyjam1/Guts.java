@@ -16,12 +16,12 @@ public final class Guts {
 		"     |       |  >I  "+
 		"     T       |  >I  "+
 		"     |       A--/|  "+
-		"     T           |  "+
+		"     X           |  "+
 		"     |           T  "+
-		"     T           |  "+
-		"                 T  "+
+		"     |           |  "+
+		"     O           X  "+
 		"                 |  "+
-		"                 T  ";
+		"                 O  ";
 	
 	public static final int W = 20, H = 15;
 	
@@ -48,6 +48,8 @@ public final class Guts {
 			case 'T': rv[k] = new TankTile(); break;
 			case 'B': rv[k] = new BrainTile(); break;
 			case 'K': rv[k] = new KidneyTile(); break;
+			case 'O': rv[k] = new OrificeTile(); break;
+			case 'X': rv[k] = new ValveTile(); break;
 			default:
 				throw new AssertionError("invalid char "+s.charAt(k));
 			}
@@ -208,7 +210,7 @@ public final class Guts {
 		}
 		@Override
 		public void tick() {
-			float flow = Math.max(3, calcFlow(nets[D_R], nets[D_L]));
+			float flow = Math.max(20, calcFlow(nets[D_R], nets[D_L]));
 			Reagents transfer = nets[D_R].contents.getVolume(flow);
 			nets[D_R].new_contents.remove(transfer);
 			
@@ -217,8 +219,8 @@ public final class Guts {
 			transfer.pourInto(nets[D_L].new_contents);
 			transfer.pourInto(nets[D_R].new_contents);
 			
-			if(nets[D_L].new_contents.getTotal() < nets[D_L].new_contents.capacity * TARGET_BLOOD_PRESSURE)
-				nets[D_L].new_contents.addRespectingCapacity(Reagent.R_BLOOD, 8); // TODO this was 2
+			if(nets[D_R].new_contents.getTotal() < nets[D_R].new_contents.capacity * TARGET_BLOOD_PRESSURE)
+				nets[D_R].new_contents.addRespectingCapacity(Reagent.R_BLOOD, 8); // TODO this was 2
 		}
 	}
 	
@@ -272,11 +274,59 @@ public final class Guts {
 				drain.new_contents.add(Reagent.R_URINE, water_removed + mwaste_removed);
 			}
 			
-			Reagents urine = new Reagents();
-			urine.add(Reagent.R_URINE, water_removed + mwaste_removed);
-			
+			//System.out.print(transfer+" --- ");
 			transfer.pourInto(to.new_contents);
-			from.new_contents.add(transfer);
+			//System.out.println(transfer);
+			//from.new_contents.add(transfer);
+			transfer.pourInto(from.new_contents);
+		}
+	}
+	
+	public class ValveTile extends Tile {
+		ValveTile() {
+			initNet(DM_U | DM_L);
+			initNet(DM_D | DM_R);
+		}
+		
+		boolean open = true;
+		
+		@Override
+		public void tick() {
+			if(open) {
+				nets[D_U].new_contents.pourInto(nets[D_D].new_contents);
+				/*float flow = calcFlow(nets[D_U], nets[D_D]);
+				if(flow > 0) {
+					Reagents transfer = nets[D_U].contents.getVolume(flow);
+					nets[D_U].new_contents.remove(transfer);
+					nets[D_D].new_contents.add(transfer);
+				} else {
+					Reagents transfer = nets[D_D].contents.getVolume(-flow);
+					nets[D_D].new_contents.remove(transfer);
+					nets[D_U].new_contents.add(transfer);
+				}*/
+			}
+		}
+	}
+	
+	public class OrificeTile extends Tile {
+		OrificeTile() {
+			initNet(DM_U | DM_D | DM_L | DM_R);
+		}
+		
+		boolean open = false;
+		
+		@Override
+		public void tick() {
+			PipeNetwork pn = nets[D_U];
+			
+			if(pn.contents.getTotal() > pn.contents.capacity * 0.9f)
+				open = true;
+			if(pn.contents.getTotal() < pn.contents.capacity * 0.1f)
+				open = false;
+			
+			if(open) {
+				pn.new_contents.remove(pn.new_contents.getFraction(1));
+			}
 		}
 	}
 	
@@ -308,8 +358,8 @@ public final class Guts {
 			
 			
 			transfer.pourInto(nets[D_D].new_contents);
-			transfer.pourInto(nets[D_U].new_contents);
 			transfer.pourInto(nets[D_L].new_contents);
+			transfer.pourInto(nets[D_U].new_contents);
 		}
 	}
 	
@@ -369,6 +419,10 @@ public final class Guts {
 			
 			// output
 			r.pourInto(out.new_contents);
+			float pct_full = r.getTotal() / r.capacity;
+			float flow = calcFlow(internal_net, out) + 10;
+			
+			transfer = r.getVolume(flow);
 		}
 		
 		@Override
