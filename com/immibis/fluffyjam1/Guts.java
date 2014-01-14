@@ -254,7 +254,7 @@ public final class Guts implements Serializable {
 			transfer.pourInto(nets[D_L].new_contents);
 			transfer.pourInto(nets[D_R].new_contents);
 			
-			if(nets[D_R].new_contents.getTotal() < nets[D_R].new_contents.capacity * TARGET_BLOOD_PRESSURE)
+			if(nets[D_R].new_contents.get(Reagent.R_BLOOD) < nets[D_R].new_contents.capacity * TARGET_BLOOD_PRESSURE)
 				nets[D_R].new_contents.addRespectingCapacity(Reagent.R_BLOOD, 8); // TODO this was 2
 		}
 	}
@@ -448,6 +448,10 @@ public final class Guts implements Serializable {
 			initNets(DM_D);
 		}
 		
+		// So you don't die immediately.
+		float startup_food = 100;
+		float startup_water = 200;
+		
 		@Override
 		public void tick() {
 			PipeNetwork blood = nets[D_D];
@@ -455,6 +459,9 @@ public final class Guts implements Serializable {
 			float energy = metabolize(blood.contents, blood.new_contents, METAB_RATE_BRAIN, 1);
 			float mwaste_pct = blood.contents.get(Reagent.R_MWASTE) / blood.contents.get(Reagent.R_BLOOD);
 			float stool_pct = blood.contents.get(Reagent.R_STOOL) / blood.contents.get(Reagent.R_BLOOD);
+			
+			if(startup_food > 0) startup_food -= blood.new_contents.dissolve(Reagent.R_FOOD, startup_food);
+			if(startup_water > 0) startup_water -= blood.new_contents.dissolve(Reagent.R_WATER, startup_water);
 
 			// normal: <10, coma: 100+, death: 200+
 			float toxin_rel = (blood.contents.get(Reagent.R_MWASTE) + blood.contents.get(Reagent.R_URINE)*2 + blood.contents.get(Reagent.R_STOOL)*5) / blood.contents.get(Reagent.R_BLOOD) * 70;
