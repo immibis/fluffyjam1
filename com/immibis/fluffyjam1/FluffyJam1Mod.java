@@ -25,6 +25,7 @@ import net.minecraft.network.packet.Packet131MapData;
 import net.minecraft.network.packet.Packet1Login;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.util.EnumMovingObjectType;
 import net.minecraft.util.Icon;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -308,6 +309,11 @@ public class FluffyJam1Mod implements IGuiHandler {
 				evt.setResult(Event.Result.ALLOW);
 			}
 		}
+		
+		if(evt.current.getItem() == Item.bucketEmpty)
+			// this block is not water
+			if(evt.target.typeOfHit == EnumMovingObjectType.TILE && evt.world.getBlockId(evt.target.blockX, evt.target.blockY, evt.target.blockZ) == blockF_u.blockID)
+				evt.setCanceled(true);
 		
 	}
 	

@@ -83,9 +83,9 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 		} else if(where == 2) {
 			buffer2.add(r);
 			while(buffer2.getTotal() >= 100) {
-				Reagents _this = buffer2.getVolume(100);
-				buffer2.remove(_this);
-				dropSolid(_this);
+				Reagents dropped = buffer2.getVolume(100);
+				buffer2.remove(dropped);
+				dropSolid(dropped);
 			}
 			
 		} else
