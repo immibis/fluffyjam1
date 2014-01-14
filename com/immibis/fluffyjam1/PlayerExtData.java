@@ -3,6 +3,7 @@ package com.immibis.fluffyjam1;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
@@ -29,7 +30,7 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 	
 	
 	// each food point gives enough to run idle for this many ticks (in normal configuration)
-	public static final int TICKS_PER_FOOD_POINT = 300;
+	public static final int TICKS_PER_FOOD_POINT = 30 * 20;
 	
 	private class FakeFoodStats extends FoodStats {
 		@Override
@@ -63,7 +64,10 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 	public void tick() {
 		data.tick();
 		
-		player.playerNetServerHandler.sendPacketToPlayer(FluffyJam1Mod.TinyPacketHandler.getBrainFunctionPacket(data.brain_function, data.bladder, data.poop));
+		player.playerNetServerHandler.sendPacketToPlayer(FluffyJam1Mod.TinyPacketHandler.getBrainFunctionPacket(data.brain_function, data.bladder, data.poop, data.food_level, data.water_level));
+		player.setAir((int)(300 * data.oxygen_level));
+		
+		data.drowning = player.isInsideOfMaterial(Material.water);
 	}
 	
 	Reagents buffer1 = new Reagents(), buffer2 = new Reagents();
@@ -95,7 +99,7 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 	}
 	
 	private void dropLiquid(Reagents dropped) {
-		if(dropped.get(Reagent.R_WATER) > dropped.get(Reagent.R_URINE))
+		if(dropped.get(Reagent.R_MWASTE) == 0)
 			dropLiquid(Block.waterStill);
 		else
 			dropLiquid(FluffyJam1Mod.blockF_u);
@@ -136,10 +140,10 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 	}
 
 
-	private void dropSolid(Reagents _this) {
+	private void dropSolid(Reagents r) {
 		ItemStack is = new ItemStack(FluffyJam1Mod.itemS);
 		is.stackTagCompound = new NBTTagCompound();
-		is.stackTagCompound.setByteArray("reagents", IOUtils.toBytes(_this));
+		is.stackTagCompound.setByteArray("reagents", IOUtils.toBytes(r));
 		EntityItem ei = new EntityItem(player.worldObj, player.posX, player.posY + 0.6, player.posZ, is);
 		ei.motionX = 0.4 * MathHelper.sin(-player.renderYawOffset * 0.017453292F - (float)Math.PI);
 		ei.motionY = 0;
@@ -175,7 +179,7 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 			if(t instanceof Guts.ValveTile) {
 				Reagents r = t.nets[Guts.D_U].contents;
 				if(r.get(Reagent.R_STOOL) > 0 && i == 2) ((Guts.ValveTile)t).open = true;
-				if(r.get(Reagent.R_URINE) > 0 && i == 1) ((Guts.ValveTile)t).open = true;
+				if(r.get(Reagent.R_MWASTE) > 0 && i == 1) ((Guts.ValveTile)t).open = true;
 			}
 	}
 

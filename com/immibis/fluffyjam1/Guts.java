@@ -1,67 +1,93 @@
 package com.immibis.fluffyjam1;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.InputMismatchException;
 import java.util.List;
+import java.util.Scanner;
 import java.util.Set;
 
 public final class Guts implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	private static String DEFAULT_SETUP_STR =
-		"     N  M           "+
-		"     |  A----T---A  "+
-		"  /--L----------A|  "+
-		"  |       B     >I  "+
-		"  |       |     >I  "+
-		"  A--K--H-^--A  >I  "+
-		"     |       |  >I  "+
-		"     T       |  >I  "+
-		"     |       A--/|  "+
-		"     X           |  "+
-		"     |           T  "+
-		"     |           |  "+
-		"     1           X  "+
-		"                 |  "+
-		"                 2  ";
-	
 	public static final int W = 20, H = 15;
 	
 	public transient GutsListener listener;
 	
-	private void parse(String s, Tile[] rv) {
-		if(s.length() != rv.length)
-			throw new AssertionError(s.length()+" "+rv.length);
-		
-		for(int k = 0; k < s.length(); k++) {
-			switch(s.charAt(k)) {
-			case ' ': rv[k] = EmptyTile.instance; break;
-			case 'M': rv[k] = new MouthTile(); break;
-			case 'N': rv[k] = new NoseTile(); break;
-			case 'H': rv[k] = new HeartTile(); break;
-			case 'L': rv[k] = new LungTile(); break;
-			case '|': rv[k] = new PipeTile(DM_U | DM_D); break;
-			case '-': rv[k] = new PipeTile(DM_L | DM_R); break;
-			case 'I': rv[k] = new IntestineTile(); break;
-			case '>': rv[k] = new PipeTile(DM_R | DM_U | DM_D); break;
-			case '^': rv[k] = new PipeTile(DM_R | DM_U | DM_L); break;
-			case '<': rv[k] = new PipeTile(DM_L | DM_U | DM_D); break;
-			case 'A': rv[k] = new PipeCrossTile(DM_L | DM_D, DM_U | DM_R); break;
-			case '/': rv[k] = new PipeCrossTile(DM_L | DM_U, DM_D | DM_R); break;
-			case '+': rv[k] = new PipeCrossTile(DM_L | DM_R, DM_U | DM_D); break;
-			case 'T': rv[k] = new TankTile(); break;
-			case 'B': rv[k] = new BrainTile(); break;
-			case 'K': rv[k] = new KidneyTile(); break;
-			case '1': rv[k] = new OrificeTile(1); break;
-			case '2': rv[k] = new OrificeTile(2); break;
-			case 'X': rv[k] = new ValveTile(); break;
-			default:
-				throw new AssertionError("invalid char "+s.charAt(k));
+	private void parseDefault(Tile[] rv) {
+		try {
+			BufferedReader s = new BufferedReader(new InputStreamReader(Guts.class.getResourceAsStream("default.txt")));
+			
+			char[] chars = new char[rv.length];
+			
+			try {
+				for(int k = 0; k < rv.length; k++) {
+					char c;
+					do
+						c = (char)s.read();
+					while(c == '\r' || c == '\n');
+					chars[k] = c;
+				}
+				while(s.read() != '\n');
+			} catch(InputMismatchException e) {
+				throw new RuntimeException(e);
 			}
+			
+			String[] defs = new String[256];
+			String l;
+			while((l = s.readLine()) != null)
+				defs[l.charAt(0)] = l.substring(2);
+			
+			for(int k = 0; k < rv.length; k++)
+				if(chars[k] == ' ')
+					rv[k] = EmptyTile.instance;
+				else if(defs[chars[k]] == null)
+					throw new RuntimeException("not defined: "+chars[k]);
+				else
+					rv[k] = createTileFromDef(defs[chars[k]]);
+		
+		} catch(IOException e) {
+			throw new RuntimeException(e);
 		}
 	}
 	
+	private int parseDirList(String dl) {
+		int rv = 0;
+		for(int k = 0; k < dl.length(); k++)
+			switch(dl.charAt(k)) {
+			case 'L': rv |= DM_L; break;
+			case 'R': rv |= DM_R; break;
+			case 'U': rv |= DM_U; break;
+			case 'D': rv |= DM_D; break;
+			}
+		return rv;
+	}
+	
+	private Tile createTileFromDef(String def) {
+		switch(def.charAt(0)) {
+		case 'M': return new MouthTile();
+		case 'N': return new NoseTile();
+		case 'H': return new HeartTile();
+		case 'L': return new LungTile();
+		case 'P': return new PipeTile(parseDirList(def.substring(1)));
+		case 'I': return new IntestineTile();
+		case 'X': return new PipeCrossTile(parseDirList(def.substring(1)), 15^parseDirList(def.substring(1)));
+		case 'T': return new TankTile();
+		case 'B': return new BrainTile();
+		case 'K': return new KidneyTile();
+		case '1': return new OrificeTile(1);
+		case '2': return new OrificeTile(2);
+		case 'V': return new ValveTile();
+		default:
+			throw new AssertionError("invalid: "+def);
+		}
+	}
+
 	// directions
 	public static final int D_U = 0;
 	public static final int D_D = 1;
@@ -74,17 +100,17 @@ public final class Guts implements Serializable {
 	public static final int DM_R = 8;
 	
 	public static final float TARGET_BLOOD_PRESSURE = 0.1f;
-	public static final float MAX_BLOOD_WATER = 1.0f; // target ratio of water:blood - kidneys will excrete excess 
+	public static final float MAX_BLOOD_WATER = 1.0f; // target ratio of water:blood - kidneys will remove excess 
 	
-	// energy units
-	public static final float METAB_RATE_BRAIN = 0.03f;
-	public static final float METAB_RATE_HEART = 0.005f;
+	// energy units per tick, aka EU/t
+	public static final float METAB_RATE_BRAIN = 1.0f / 20f;
+	public static final float METAB_RATE_HEART = 0.1f / 20f;
 	
 	
 	// The amount of oxygen and food used, and mwaste produced, per energy unit (in mL/EU)
-	public static final float BASE_METABOLIC_OXYGEN_RATIO = 0.1f;
-	public static final float BASE_METABOLIC_FOOD_RATIO = 0.05f;
-	public static final float BASE_METABOLIC_WASTE_RATIO = 0.1f;
+	public static final float BASE_METABOLIC_OXYGEN_RATIO = 3f;
+	public static final float BASE_METABOLIC_FOOD_RATIO = 0.5f;
+	public static final float BASE_METABOLIC_WASTE_RATIO = 0.35f;
 	
 	// amount of food/tick expected to be used when not doing anything
 	public static final float FOOD_USE_RATE_IDLE = (METAB_RATE_BRAIN + METAB_RATE_HEART) * BASE_METABOLIC_FOOD_RATIO;
@@ -179,13 +205,11 @@ public final class Guts implements Serializable {
 			//	nets[D_D].new_contents.set(Reagent.R_FOOD, 80.0f);
 			//	nets[D_D].new_contents.set(Reagent.R_WATER, 30.0f);
 			//}
-			if(mouthBuffer.getTotal() > 0)
-				mouthBuffer = mouthBuffer;
 			mouthBuffer.pourInto(nets[D_D].new_contents);
 		}
 	}
 	
-	public static class NoseTile extends Tile {
+	public class NoseTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
 		NoseTile() {
@@ -195,12 +219,10 @@ public final class Guts implements Serializable {
 		@Override
 		public void tick() {
 			
-			// TODO drowning
-			
 			Reagents to_remove = nets[D_D].contents.getFraction(0.05f);
 			nets[D_D].new_contents.remove(to_remove);
 			
-			nets[D_D].new_contents.addRespectingCapacity(Reagent.R_OXYGEN, 3);
+			nets[D_D].new_contents.addRespectingCapacity(drowning ? Reagent.R_WATER : Reagent.R_OXYGEN, 3);
 		}
 	}
 	
@@ -213,13 +235,6 @@ public final class Guts implements Serializable {
 		
 		@Override
 		public void tick() {
-			if(nets[D_U].contents.get(Reagent.R_WATER) > 0.1f)
-				return; // lungs don't function if you're breathing water (aka drowning)
-						// TODO this is broken because it doesn't even flow
-			
-			if(nets[D_U].contents.get(Reagent.R_URINE) > 0.1f)
-				return; // !!!???
-			
 			float flow = calcFlow(nets[D_L], nets[D_R]);
 			
 			if(flow <= 0)
@@ -228,9 +243,17 @@ public final class Guts implements Serializable {
 			Reagents transfer = nets[D_L].contents.getVolume(flow);
 			nets[D_L].new_contents.remove(transfer);
 			
-			// oxygen + blood -> blood_ox
-			float avail_oxy = nets[D_U].contents.get(Reagent.R_OXYGEN);
-			nets[D_U].new_contents.remove(Reagent.R_OXYGEN, transfer.dissolve(Reagent.R_OXYGEN, avail_oxy));
+			if(nets[D_U].contents.get(Reagent.R_WATER) < 0.05f) { // this is called drowning.
+				float avail_oxy = nets[D_U].contents.get(Reagent.R_OXYGEN);
+				nets[D_U].new_contents.remove(Reagent.R_OXYGEN, transfer.dissolve(Reagent.R_OXYGEN, avail_oxy));
+			
+			} else {
+				// if drowning, why not inhale some water?
+				Reagents transfer2 = nets[D_U].contents.getVolume(0.2f);
+				transfer2.set(Reagent.R_OXYGEN, 0);
+				nets[D_U].new_contents.remove(transfer2);
+				transfer.add(transfer2);
+			}
 			
 			transfer.pourInto(nets[D_R].new_contents);
 			transfer.pourInto(nets[D_L].new_contents);
@@ -302,7 +325,7 @@ public final class Guts implements Serializable {
 			
 			PipeNetwork drain = nets[D_D];
 			
-			final float WATER_TO_MWASTE_RATIO = 1;
+			final float WATER_TO_MWASTE_RATIO = 0.5f;
 			final float EXCESS_WATER_REMOVE_RATE = 0.3f;
 			final float MWASTE_REMOVE_RATE = 0.8f;
 			
@@ -321,7 +344,8 @@ public final class Guts implements Serializable {
 				water_removed = transfer.remove(Reagent.R_WATER, water_removed);
 				mwaste_removed = transfer.remove(Reagent.R_MWASTE, mwaste_removed);
 				
-				drain.new_contents.add(Reagent.R_URINE, water_removed + mwaste_removed);
+				drain.new_contents.add(Reagent.R_WATER, water_removed);
+				drain.new_contents.add(Reagent.R_MWASTE, mwaste_removed);
 			}
 			
 			//System.out.print(transfer+" --- ");
@@ -439,7 +463,9 @@ public final class Guts implements Serializable {
 	public float brain_function;
 	
 	// 0 = empty, 1 = full
-	public float bladder, poop;
+	public float bladder, poop, food_level, water_level, oxygen_level;
+	
+	public boolean drowning;
 	
 	public class BrainTile extends Tile {
 		private static final long serialVersionUID = 1L;
@@ -449,8 +475,8 @@ public final class Guts implements Serializable {
 		}
 		
 		// So you don't die immediately.
-		float startup_food = 100;
-		float startup_water = 200;
+		float startup_food = 0;
+		float startup_water = 50;
 		
 		@Override
 		public void tick() {
@@ -464,7 +490,7 @@ public final class Guts implements Serializable {
 			if(startup_water > 0) startup_water -= blood.new_contents.dissolve(Reagent.R_WATER, startup_water);
 
 			// normal: <10, coma: 100+, death: 200+
-			float toxin_rel = (blood.contents.get(Reagent.R_MWASTE) + blood.contents.get(Reagent.R_URINE)*2 + blood.contents.get(Reagent.R_STOOL)*5) / blood.contents.get(Reagent.R_BLOOD) * 70;
+			float toxin_rel = (blood.contents.get(Reagent.R_MWASTE) + blood.contents.get(Reagent.R_STOOL)*5) / blood.contents.get(Reagent.R_BLOOD) * 70;
 			
 			if(toxin_rel < 10)
 				brain_function = 1;
@@ -475,7 +501,11 @@ public final class Guts implements Serializable {
 			
 			float energy_avail_pct = energy / METAB_RATE_BRAIN;
 			if(energy_avail_pct < 0.05f)
-				brain_function = Math.min(brain_function, 0.6f);
+				brain_function = Math.min(brain_function, 0.75f);
+			
+			food_level = Math.min(1, blood.contents.get(Reagent.R_FOOD) / (blood.contents.get(Reagent.R_BLOOD) * Reagent.BLOOD_CAP[Reagent.R_FOOD]));
+			water_level = Math.min(1, blood.contents.get(Reagent.R_WATER) / (blood.contents.get(Reagent.R_BLOOD) * Reagent.BLOOD_CAP[Reagent.R_WATER]));
+			oxygen_level = Math.min(1, blood.contents.get(Reagent.R_OXYGEN) / (blood.contents.get(Reagent.R_BLOOD) * Reagent.BLOOD_CAP[Reagent.R_OXYGEN]));
 		}
 	}
 	
@@ -533,7 +563,7 @@ public final class Guts implements Serializable {
 			
 			if(r.get(Reagent.R_STOOL) > 0)
 				poop = r.getTotal() / r.capacity;
-			if(r.get(Reagent.R_URINE) > 0)
+			if(r.get(Reagent.R_MWASTE) > 0)
 				bladder = r.getTotal() / r.capacity;
 		}
 		
@@ -578,7 +608,7 @@ public final class Guts implements Serializable {
 		leaked_reagents = new Reagents();
 		leaked_reagents.capacity = Float.POSITIVE_INFINITY;
 		
-		parse(DEFAULT_SETUP_STR, tiles);
+		parseDefault(tiles);
 		buildNetworks();
 	}
 	

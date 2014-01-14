@@ -84,6 +84,8 @@ public class FluffyJam1Mod implements IGuiHandler {
 	public static float clientBrainFunction;
 	public static float clientBladderBar;
 	public static float clientPoopBar;
+	public static float clientFoodLevel;
+	public static float clientWaterLevel;
 	
 	public static class TinyPacketHandler implements ITinyPacketHandler {
 		@Override
@@ -92,6 +94,8 @@ public class FluffyJam1Mod implements IGuiHandler {
 				clientBrainFunction = (p.itemData[0] & 255) / 255f;
 				clientBladderBar = (p.itemData[1] & 255) / 255f;
 				clientPoopBar = (p.itemData[2] & 255) / 255f;
+				clientFoodLevel = (p.itemData[3] & 255) / 255f;
+				clientWaterLevel = (p.itemData[4] & 255) / 255f;
 			}
 			if(p.uniqueID == 1)
 				PlayerExtData.get(((NetServerHandler)handler).playerEntity).empty(1);
@@ -99,8 +103,8 @@ public class FluffyJam1Mod implements IGuiHandler {
 				PlayerExtData.get(((NetServerHandler)handler).playerEntity).empty(2);
 		}
 		
-		public static Packet getBrainFunctionPacket(float bf, float bl, float p) {
-			return PacketDispatcher.getTinyPacket(INSTANCE, (short)0, new byte[] {(byte)(bf * 255), (byte)(bl * 255), (byte)(p * 255)});
+		public static Packet getBrainFunctionPacket(float bf, float bl, float p, float f, float w) {
+			return PacketDispatcher.getTinyPacket(INSTANCE, (short)0, new byte[] {(byte)(bf * 255), (byte)(bl * 255), (byte)(p * 255), (byte)(f * 255), (byte)(w * 255)});
 		}
 		
 		public static Packet getActionPacket(int a) {
@@ -136,6 +140,8 @@ public class FluffyJam1Mod implements IGuiHandler {
 		int w = 60;
 		int y = evt.resolution.getScaledHeight()*3/4;
 		int h = 5;
+		GL11.glColor4f(0.7f, 0.5f, 0, 1); drawBar(x, y, w, h, clientFoodLevel); y += h;
+		GL11.glColor4f(0, 0, 1, 1); drawBar(x, y, w, h, clientWaterLevel); y += h;
 		GL11.glColor4f(1, 1, 0, 1); drawBar(x, y, w, h, clientBladderBar); y += h;
 		GL11.glColor4f(0.35f, 0.25f, 0, 1); drawBar(x, y, w, h, clientPoopBar); y += h;
 		GL11.glColor4f(0, 1, 0, 1); drawBar(x, y, w, h, clientBrainFunction); y += h;
@@ -150,11 +156,11 @@ public class FluffyJam1Mod implements IGuiHandler {
 	}
 	
 	private void drawBar(int x, int y, int w, int h, float f) {
-		w = (int)(w * f);
+		float right = x + w * f;
 		GL11.glVertex2f(x, y);
 		GL11.glVertex2f(x, y+h);
-		GL11.glVertex2f(x+w, y+h);
-		GL11.glVertex2f(x+w, y);
+		GL11.glVertex2f(right, y+h);
+		GL11.glVertex2f(right, y);
 	}
 	
 	@ForgeSubscribe
