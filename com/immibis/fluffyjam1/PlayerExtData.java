@@ -2,6 +2,7 @@ package com.immibis.fluffyjam1;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
@@ -15,6 +16,7 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.common.IExtendedEntityProperties;
+import net.minecraftforge.fluids.BlockFluidBase;
 
 public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 
@@ -71,28 +73,19 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 	public void eject(Reagents r, int where) {
 		if(where == 1) {
 			buffer1.add(r);
-			for(int k = 0; k < Reagent.COUNT; k++)
-				while(buffer1.get(k) > 100) {
-					buffer1.remove(k, 100);
-					player.sendChatToPlayer(ChatMessageComponent.createFromText("Dropped some "+Reagent.NAME[k]));
-				}
+			
+			while(buffer1.getTotal() > 100) {
+				Reagents dropped = buffer1.getVolume(100);
+				buffer1.remove(dropped);
+				dropLiquid(dropped);
+			}
 		
 		} else if(where == 2) {
 			buffer2.add(r);
 			while(buffer2.getTotal() >= 100) {
 				Reagents _this = buffer2.getVolume(100);
 				buffer2.remove(_this);
-				
-				ItemStack is = new ItemStack(FluffyJam1Mod.itemS);
-				is.stackTagCompound = new NBTTagCompound();
-				is.stackTagCompound.setByteArray("reagents", IOUtils.toBytes(_this));
-				EntityItem ei = new EntityItem(player.worldObj, player.posX, player.posY + 0.6, player.posZ, is);
-				ei.motionX = 0.4 * MathHelper.sin(-player.renderYawOffset * 0.017453292F - (float)Math.PI);
-				ei.motionY = 0;
-				ei.motionZ = 0.4 * MathHelper.cos(-player.renderYawOffset * 0.017453292F - (float)Math.PI);
-				ei.delayBeforeCanPickup = 40;
-				player.worldObj.spawnEntityInWorld(ei);
-				player.worldObj.playSoundAtEntity(player, "mob.chicken.plop", 1.0F, (player.worldObj.rand.nextFloat() - player.worldObj.rand.nextFloat()) * 0.2F + 1.0F);
+				dropSolid(_this);
 			}
 			
 		} else
@@ -101,6 +94,62 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 		
 	}
 	
+	private void dropLiquid(Reagents dropped) {
+		if(dropped.get(Reagent.R_WATER) > dropped.get(Reagent.R_URINE))
+			dropLiquid(Block.waterStill);
+		else
+			dropLiquid(FluffyJam1Mod.blockF_u);
+	}
+
+	private boolean tryDropLiquid(Block block, World w, int x, int y, int z) {
+		if(!w.isAirBlock(x, y, z))
+			return false;
+		while(y>0 && w.isAirBlock(x, y-1, z))
+			y--;
+		w.setBlock(x, y, z, block.blockID);
+		return true;
+	}
+
+	private void dropLiquid(Block block) {
+		World w = player.worldObj;
+		int x = MathHelper.floor_double(player.posX);
+		int y = MathHelper.floor_double(player.posY);
+		int z = MathHelper.floor_double(player.posZ);
+		if(tryDropLiquid(block, w, x, y, z))
+			return;
+		for(int k = 0; k < 50; k++) {
+			int _x = x + w.rand.nextInt(9) - 4;
+			int _y = y + w.rand.nextInt(9) - 4;
+			int _z = z + w.rand.nextInt(9) - 4;
+			if(tryDropLiquid(block, w, _x, _y, _z))
+				return;
+		}
+		
+		for(int dx = -4; dx <= 4; dx++)
+			for(int dy = -4; dy <= 4; dy++)
+				for(int dz = -4; dz <= 4; dz++)
+					if(tryDropLiquid(block, w, x+dx, y+dy, z+dz))
+						return;
+		
+		// overwrite a random block
+		w.setBlock(x + w.rand.nextInt(9) - 4, y + w.rand.nextInt(9) - 4, z + w.rand.nextInt(9) - 4, block.blockID);
+	}
+
+
+	private void dropSolid(Reagents _this) {
+		ItemStack is = new ItemStack(FluffyJam1Mod.itemS);
+		is.stackTagCompound = new NBTTagCompound();
+		is.stackTagCompound.setByteArray("reagents", IOUtils.toBytes(_this));
+		EntityItem ei = new EntityItem(player.worldObj, player.posX, player.posY + 0.6, player.posZ, is);
+		ei.motionX = 0.4 * MathHelper.sin(-player.renderYawOffset * 0.017453292F - (float)Math.PI);
+		ei.motionY = 0;
+		ei.motionZ = 0.4 * MathHelper.cos(-player.renderYawOffset * 0.017453292F - (float)Math.PI);
+		ei.delayBeforeCanPickup = 40;
+		player.worldObj.spawnEntityInWorld(ei);
+		player.worldObj.playSoundAtEntity(player, "mob.chicken.plop", 1.0F, (player.worldObj.rand.nextFloat() - player.worldObj.rand.nextFloat()) * 0.2F + 1.0F);
+	}
+
+
 	@Override
 	public void saveNBTData(NBTTagCompound compound) {
 		// TODO Auto-generated method stub

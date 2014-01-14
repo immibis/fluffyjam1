@@ -10,6 +10,7 @@ import org.lwjgl.opengl.GL11;
 import com.jcraft.jorbis.Block;
 
 import net.minecraft.block.BlockFluid;
+import net.minecraft.block.material.Material;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -24,9 +25,11 @@ import net.minecraft.network.packet.Packet131MapData;
 import net.minecraft.network.packet.Packet1Login;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.util.Icon;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
+import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.Event;
 import net.minecraftforge.event.EventPriority;
@@ -36,6 +39,8 @@ import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.player.FillBucketEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fluids.BlockFluidBase;
+import net.minecraftforge.fluids.BlockFluidClassic;
+import net.minecraftforge.fluids.BlockFluidFinite;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidRegistry.FluidRegisterEvent;
@@ -150,6 +155,14 @@ public class FluffyJam1Mod implements IGuiHandler {
 		GL11.glVertex2f(x+w, y+h);
 		GL11.glVertex2f(x+w, y);
 	}
+	
+	@ForgeSubscribe
+	public void onIconRegister(TextureStitchEvent.Pre evt) {
+		if(evt.map.textureType == 0) {
+			f_u.setIcons(evt.map.registerIcon("immibis_fluffyjam1:f_u_s"), evt.map.registerIcon("immibis_fluffyjam1:f_u_f"));
+			f_d.setIcons(evt.map.registerIcon("immibis_fluffyjam1:f_d"));
+		}
+	}
 
 	@Mod.EventHandler
 	public void init(FMLInitializationEvent evt) {
@@ -161,6 +174,20 @@ public class FluffyJam1Mod implements IGuiHandler {
 		
 		if(!FluidRegistry.registerFluid(f_u)) throw new RuntimeException(f_u.getName()+" already registered");
 		if(!FluidRegistry.registerFluid(f_d)) throw new RuntimeException(f_d.getName()+" already registered");
+		
+		blockF_u = new BlockFluidClassic(2201, f_u, Material.water) {
+			@Override
+			@SideOnly(Side.CLIENT)
+			public Icon getIcon(int par1, int par2) {
+				if(par1 == 1)
+					return f_u.getStillIcon();
+				else
+					return f_u.getFlowingIcon();
+			}
+			
+			{setQuantaPerBlock(3);}
+		};
+		blockF_d = new BlockFluidClassic(2202, f_d, Material.water);
 		
 		NetworkRegistry.instance().registerGuiHandler(this, this);
 		NetworkRegistry.instance().registerChannel(new OpTableContainer.PacketHandler(), OpTableContainer.CHANNEL);

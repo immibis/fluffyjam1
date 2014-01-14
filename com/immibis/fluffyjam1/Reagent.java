@@ -35,7 +35,7 @@ public final class Reagent {
 		NAME[R_STOOL] = "stool";
 		NAME[R_MWASTE] = "metabolic waste";
 		
-		BLOOD_CAP[R_FOOD] = 0.1f;
+		BLOOD_CAP[R_FOOD] = 1f;
 		BLOOD_CAP[R_OXYGEN] = 0.2f;
 		BLOOD_CAP[R_WATER] = 0.3f;
 		BLOOD_CAP[R_MWASTE] = 0.1f;

@@ -74,7 +74,7 @@ public final class Guts implements Serializable {
 	public static final int DM_R = 8;
 	
 	public static final float TARGET_BLOOD_PRESSURE = 0.1f;
-	public static final float MAX_BLOOD_WATER = 0.5f; // water as a percentage of blood volume (not total); kidneys will excrete excess 
+	public static final float MAX_BLOOD_WATER = 1.0f; // target ratio of water:blood - kidneys will excrete excess 
 	
 	// energy units
 	public static final float METAB_RATE_BRAIN = 0.03f;
@@ -126,6 +126,7 @@ public final class Guts implements Serializable {
 			ox_ratio *= BASE_METABOLIC_OXYGEN_RATIO;
 			
 			float to_use = Math.min(Math.min(r.get(Reagent.R_FOOD), nr.get(Reagent.R_FOOD))/BASE_METABOLIC_FOOD_RATIO, Math.min(r.get(Reagent.R_OXYGEN), nr.get(Reagent.R_OXYGEN))/ox_ratio);
+			to_use = Math.min(to_use, amount);
 			//to_use = Math.min(to_use, r.getDissolveSpace(Reagent.R_MWASTE)/BASE_METABOLIC_WASTE_RATIO);
 			
 			nr.remove(Reagent.R_FOOD, to_use*BASE_METABOLIC_FOOD_RATIO);
@@ -406,14 +407,21 @@ public final class Guts implements Serializable {
 			
 			flow = Math.max(Math.min(flow, 1), 0.1f);
 			
+			Reagents blood = nets[D_L].contents, new_blood = nets[D_L].new_contents;
+			//float max_food_transfer = new_blood.getDissolveSpace(Reagent.R_FOOD);
+			
 			Reagents transfer = nets[D_U].contents.getVolume(flow);
+			
+			//if(transfer.get(Reagent.R_FOOD) > max_food_transfer)
+			//	transfer.set(Reagent.R_FOOD, max_food_transfer);
+			
 			nets[D_U].new_contents.remove(transfer);
 			
 			float avail_food = transfer.get(Reagent.R_FOOD);
-			Reagents blood = nets[D_L].contents, new_blood = nets[D_L].new_contents;
-			float used_food = new_blood.dissolve(Reagent.R_FOOD, avail_food * 0.3f);
+			float used_food = avail_food * 0.3f;
+			float leftover_food = used_food - new_blood.dissolve(Reagent.R_FOOD, used_food);
 			transfer.remove(Reagent.R_FOOD, used_food);
-			transfer.add(Reagent.R_STOOL, used_food*1.2f);
+			transfer.add(Reagent.R_STOOL, used_food*1.2f + leftover_food);
 			
 			float avail_water = transfer.get(Reagent.R_WATER);
 			if(avail_water > 0)
@@ -610,7 +618,7 @@ public final class Guts implements Serializable {
 			if(pn.size == 0) pn.size = 1;
 			pn.contents = new Reagents();
 			pn.new_contents = new Reagents();
-			pn.contents.capacity = pn.new_contents.capacity = 10 * pn.size; 
+			pn.contents.capacity = pn.new_contents.capacity = 30 * pn.size; 
 		}
 	}
 	
