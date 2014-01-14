@@ -3,6 +3,7 @@ package com.immibis.fluffyjam1;
 import java.util.Arrays;
 import java.util.List;
 
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
@@ -13,6 +14,7 @@ import net.minecraft.util.ResourceLocation;
 public class OpTableGUI extends GuiContainer {
 	private ResourceLocation BG_TEX = new ResourceLocation("immibis_fluffyjam1", "textures/gui/optable.png");
 	
+	private int scrollx, scrolly;
 	
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float f, int mousex, int mousey) {
@@ -26,7 +28,7 @@ public class OpTableGUI extends GuiContainer {
 		
 		for(int y = 0; y < 15; y++)
 			for(int x = 0; x < 20; x++) {
-				Guts.Tile t = guts.getTile(x, y);
+				Guts.Tile t = guts.getTile(x+scrollx, y+scrolly);
 				if(t instanceof Guts.EmptyTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 12, 204, 12, 12);
 				else if(t instanceof Guts.MouthTile)
@@ -60,9 +62,6 @@ public class OpTableGUI extends GuiContainer {
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 36, 228, 12, 12);
 				else if(t instanceof Guts.KidneyTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 48, 228, 12, 12);
-				//case TUBE_BSLASH: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 72, 192, 12, 12);
-				//case TUBE_FSLASH: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 60, 192, 12, 12);
-				//case TUBE_CROSS: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 84, 192, 12, 12);
 			}
 		
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -70,7 +69,7 @@ public class OpTableGUI extends GuiContainer {
 		
 		for(int y = 0; y < 15; y++)
 			for(int x = 0; x < 20; x++) {
-				Guts.Tile t = guts.getTile(x, y);
+				Guts.Tile t = guts.getTile(x+scrollx, y+scrolly);
 				int px = 8+12*x, py = 6+12*y;
 				if(t instanceof Guts.PipeTile) {
 					switch(((Guts.PipeTile)t).getMask()) {
@@ -131,6 +130,17 @@ public class OpTableGUI extends GuiContainer {
 				drawHoveringText(desc, guiLeft+mousex, guiTop+mousey, fontRenderer);
 			}
 		}
+	}
+	
+	@Override
+	protected void keyTyped(char par1, int par2) {
+		switch(par2) {
+		case Keyboard.KEY_UP: scrolly--; break;
+		case Keyboard.KEY_DOWN: scrolly++; break;
+		case Keyboard.KEY_LEFT: scrollx--; break;
+		case Keyboard.KEY_RIGHT: scrollx++; break;
+		}
+		super.keyTyped(par1, par2);
 	}
 	
 	private void drawReagents(Reagents r, int x, int y, int w, int h) {

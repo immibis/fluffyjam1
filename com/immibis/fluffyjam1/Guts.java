@@ -15,43 +15,56 @@ import java.util.Set;
 public final class Guts implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	public static final int W = 20, H = 15;
+	public int w, h; // normally 20x15
 	
 	public transient GutsListener listener;
 	
-	private void parseDefault(Tile[] rv) {
+	private void parseDefault() {
 		try {
 			BufferedReader s = new BufferedReader(new InputStreamReader(Guts.class.getResourceAsStream("default.txt")));
 			
-			char[] chars = new char[rv.length];
-			
-			try {
-				for(int k = 0; k < rv.length; k++) {
-					char c;
-					do
-						c = (char)s.read();
-					while(c == '\r' || c == '\n');
-					chars[k] = c;
-				}
-				while(s.read() != '\n');
-			} catch(InputMismatchException e) {
-				throw new RuntimeException(e);
+			w = 0;
+			h = 0;
+			String l;
+			while(!(l = s.readLine()).equals("END")) {
+				w = l.length();
+				h++;
 			}
 			
+			s.close();
+			s = new BufferedReader(new InputStreamReader(Guts.class.getResourceAsStream("default.txt")));
+			
+			tiles = new Tile[w*h];
+			
+			
+			char[] chars = new char[tiles.length];
+			
+			for(int k = 0; k < tiles.length; k++) {
+				char c;
+				do
+					c = (char)s.read();
+				while(c == '\r' || c == '\n');
+				chars[k] = c;
+			}
+			while(s.read() != '\n');
+			
+			assert s.readLine().equals("END");
+		
 			String[] defs = new String[256];
-			String l;
 			while((l = s.readLine()) != null)
 				defs[l.charAt(0)] = l.substring(2);
 			
-			for(int k = 0; k < rv.length; k++)
+			s.close();
+			
+			for(int k = 0; k < tiles.length; k++)
 				if(chars[k] == ' ')
-					rv[k] = EmptyTile.instance;
+					tiles[k] = EmptyTile.instance;
 				else if(defs[chars[k]] == null)
 					throw new RuntimeException("not defined: "+chars[k]);
 				else
-					rv[k] = createTileFromDef(defs[chars[k]]);
-		
-		} catch(IOException e) {
+					tiles[k] = createTileFromDef(defs[chars[k]]);
+			
+			} catch(IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -278,7 +291,7 @@ public final class Guts implements Serializable {
 			transfer.pourInto(nets[D_R].new_contents);
 			
 			if(nets[D_R].new_contents.get(Reagent.R_BLOOD) < nets[D_R].new_contents.capacity * TARGET_BLOOD_PRESSURE)
-				nets[D_R].new_contents.addRespectingCapacity(Reagent.R_BLOOD, 8); // TODO this was 2
+				nets[D_R].new_contents.addRespectingCapacity(Reagent.R_BLOOD, 8); // TODO should not be in HeartTile
 		}
 	}
 	
@@ -600,29 +613,28 @@ public final class Guts implements Serializable {
 		PipeNetwork getRoot() {if(parent != null) return parent = parent.getRoot(); else return this;}
 	}
 	
-	Tile[] tiles = new Tile[W*H];
+	public Tile[] tiles;
 	private Reagents leaked_reagents;
 	
 	{
-		tiles = new Tile[W*H];
 		leaked_reagents = new Reagents();
 		leaked_reagents.capacity = Float.POSITIVE_INFINITY;
 		
-		parseDefault(tiles);
+		parseDefault();
 		buildNetworks();
 	}
 	
 	public Tile getTile(int x, int y) {
-		Tile t = tiles[x + y*W];
-		assert t != null : "tile is null at "+x+","+y;
-		return t;
+		if(!validCoords(x, y))
+			return null;
+		return tiles[x + y*w];
 	}
 	
 	private void buildNetworks() {
-		for(int y = 0; y < H; y++)
-			for(int x = 0; x < W; x++)
-				if(tiles[x + y*W].nets != null) {
-					PipeNetwork[] n = tiles[x + y*W].nets;
+		for(int y = 0; y < h; y++)
+			for(int x = 0; x < w; x++)
+				if(tiles[x + y*w].nets != null) {
+					PipeNetwork[] n = tiles[x + y*w].nets;
 					if(n[D_U] != null) n[D_U].leak |= mergeNets(x, y, D_U, x, y-1);
 					if(n[D_D] != null) n[D_D].leak |= mergeNets(x, y, D_D, x, y+1);
 					if(n[D_L] != null) n[D_L].leak |= mergeNets(x, y, D_L, x-1, y);
@@ -630,10 +642,10 @@ public final class Guts implements Serializable {
 				}
 		
 		Set<PipeNetwork> nets = new HashSet<PipeNetwork>();
-		for(int y = 0; y < H; y++)
-			for(int x = 0; x < W; x++)
-				if(tiles[x + y*W].nets != null) {
-					PipeNetwork[] n = tiles[x + y*W].nets;
+		for(int y = 0; y < h; y++)
+			for(int x = 0; x < w; x++)
+				if(tiles[x + y*w].nets != null) {
+					PipeNetwork[] n = tiles[x + y*w].nets;
 					for(int k = 0; k < 4; k++)
 						if(n[k] != null) {
 							PipeNetwork pn = n[k];
@@ -641,10 +653,10 @@ public final class Guts implements Serializable {
 							n[k].leak |= pn.leak;
 							// increment n[k].size if this tile-side is actually connected to another tile-side
 							switch(k) {
-							case D_U: if(y > 0 && tiles[x + (y-1)*W].nets != null && tiles[x + (y-1)*W].nets[D_D] != null) n[k].size++; break;
-							case D_D: if(y<H-1 && tiles[x + (y+1)*W].nets != null && tiles[x + (y+1)*W].nets[D_U] != null) n[k].size++; break;
-							case D_L: if(x > 0 && tiles[(x-1) + y*W].nets != null && tiles[(x-1) + y*W].nets[D_R] != null) n[k].size++; break;
-							case D_R: if(x<W-1 && tiles[(x+1) + y*W].nets != null && tiles[(x+1) + y*W].nets[D_L] != null) n[k].size++; break;
+							case D_U: if(y > 0 && tiles[x + (y-1)*w].nets != null && tiles[x + (y-1)*w].nets[D_D] != null) n[k].size++; break;
+							case D_D: if(y<h-1 && tiles[x + (y+1)*w].nets != null && tiles[x + (y+1)*w].nets[D_U] != null) n[k].size++; break;
+							case D_L: if(x > 0 && tiles[(x-1) + y*w].nets != null && tiles[(x-1) + y*w].nets[D_R] != null) n[k].size++; break;
+							case D_R: if(x<w-1 && tiles[(x+1) + y*w].nets != null && tiles[(x+1) + y*w].nets[D_L] != null) n[k].size++; break;
 							}
 						}
 				}
@@ -666,14 +678,14 @@ public final class Guts implements Serializable {
 		if(!validCoords(x2, y2))
 			return true;
 		
-		PipeNetwork[] n = tiles[x2 + y2*W].nets;
+		PipeNetwork[] n = tiles[x2 + y2*w].nets;
 		if(n == null)
 			return true;
 		
 		if(n[dir^1] == null)
 			return true;
 		
-		PipeNetwork t_set = tiles[x + y*W].nets[dir].getRoot();
+		PipeNetwork t_set = tiles[x + y*w].nets[dir].getRoot();
 		PipeNetwork o_set = n[dir^1].getRoot();
 		if(t_set != o_set)
 			o_set.parent = t_set;
@@ -682,13 +694,13 @@ public final class Guts implements Serializable {
 	}
 	
 	public boolean validCoords(int x, int y) {
-		return x >= 0 && y >= 0 && x < W && y < H;
+		return x >= 0 && y >= 0 && x < w && y < h;
 	}
 
 	public void tick() {
 		int i = 0;
-		for(int y = 0; y < H; y++)
-		for(int x = 0; x < W; x++, i++) {
+		for(int y = 0; y < h; y++)
+		for(int x = 0; x < w; x++, i++) {
 			tiles[i].tick();
 		}
 		
