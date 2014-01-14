@@ -82,9 +82,9 @@ public final class Guts implements Serializable {
 	
 	
 	// The amount of oxygen and food used, and mwaste produced, per energy unit (in mL/EU)
-	public static final float BASE_METABOLIC_OXYGEN_RATIO = 1;
-	public static final float BASE_METABOLIC_FOOD_RATIO = 1;
-	public static final float BASE_METABOLIC_WASTE_RATIO = 1;
+	public static final float BASE_METABOLIC_OXYGEN_RATIO = 0.1f;
+	public static final float BASE_METABOLIC_FOOD_RATIO = 0.05f;
+	public static final float BASE_METABOLIC_WASTE_RATIO = 0.1f;
 	
 	// amount of food/tick expected to be used when not doing anything
 	public static final float FOOD_USE_RATE_IDLE = (METAB_RATE_BRAIN + METAB_RATE_HEART) * BASE_METABOLIC_FOOD_RATIO;
