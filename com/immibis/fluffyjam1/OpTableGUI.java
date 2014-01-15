@@ -60,10 +60,10 @@ public class OpTableGUI extends GuiContainer {
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 132, 228, 12, 12);
 				else if(t instanceof Guts.BrainTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 36, 228, 12, 12);
-				else if(t instanceof Guts.KidneyTile)
-					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 48, 228, 12, 12);
 				else if(t instanceof Guts.ObstacleTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, ((Guts.ObstacleTile)t).u, ((Guts.ObstacleTile)t).v, 12, 12);
+				else if(t instanceof Guts.SensorTile)
+					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 156, 228, 12, 12);
 			}
 		
 		GL11.glDisable(GL11.GL_TEXTURE_2D);

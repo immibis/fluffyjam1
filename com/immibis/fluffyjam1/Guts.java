@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.InputMismatchException;
@@ -94,7 +95,11 @@ public final class Guts implements Serializable {
 		case 'X': return new PipeCrossTile(parseDirList(def.substring(1)), 15^parseDirList(def.substring(1)));
 		case 'T': return new TankTile();
 		case 'B': return new BrainTile();
-		case 'K': return new KidneyTile();
+		case 'S': return new SensorTile(Integer.parseInt(def.substring(1), 10));
+		case 'K':  {
+			String[] p = def.substring(1).split(",");
+			return new KidneyTile(Integer.parseInt(p[0], 10), Integer.parseInt(p[1], 10));
+		}
 		case 'O': return new OrificeTile(Integer.parseInt(def.substring(1), 10));
 		case 'V':
 			if(def.charAt(1) == 'A')
@@ -104,6 +109,10 @@ public final class Guts implements Serializable {
 		case '#': {
 			String[] p = def.substring(1).split(",");
 			return new ObstacleTile(Integer.parseInt(p[0], 10), Integer.parseInt(p[1], 10));
+		}
+		case '!': {
+			String[] p = def.substring(1).split(",");
+			return new PipeObstacleTile(parseDirList(p[0]), Integer.parseInt(p[1], 10), Integer.parseInt(p[2], 10));
 		}
 		default:
 			throw new AssertionError("invalid: "+def);
@@ -306,10 +315,11 @@ public final class Guts implements Serializable {
 		}
 	}
 	
-	public class KidneyTile extends Tile {
+	public class KidneyTile extends ObstacleTile {
 		private static final long serialVersionUID = 1L;
 		
-		KidneyTile() {
+		KidneyTile(int u, int v) {
+			super(u, v);
 			initNets(DM_U | DM_D);
 			initNet(DM_L | DM_R);
 		}
@@ -498,6 +508,29 @@ public final class Guts implements Serializable {
 		}
 	}
 	
+	public class SensorTile extends Tile {
+		int id;
+		
+		SensorTile(int id) {
+			this.id = id;
+			initNet(DM_L | DM_R | DM_U | DM_D);
+		}
+		
+		@Override
+		public void tick() {
+			float value = nets[D_U].contents.getFractionFull();
+			if(id == 1)
+				bladder = value;
+			else if(id == 2)
+				poop = value;
+		}
+		
+		@Override
+		public List<String> describe() {
+			return Arrays.asList("Pressure sensor", "ID: "+id);
+		}
+	}
+	
 	// 0 = dead, 0-0.5 = coma, 0.5-1 = various symptoms, 0 = normal
 	public float brain_function;
 	
@@ -545,6 +578,15 @@ public final class Guts implements Serializable {
 			food_level = Math.min(1, blood.contents.get(Reagent.R_FOOD) / (blood.contents.get(Reagent.R_BLOOD) * Reagent.BLOOD_CAP[Reagent.R_FOOD]));
 			water_level = Math.min(1, blood.contents.get(Reagent.R_WATER) / (blood.contents.get(Reagent.R_BLOOD) * Reagent.BLOOD_CAP[Reagent.R_WATER]));
 			oxygen_level = Math.min(1, blood.contents.get(Reagent.R_OXYGEN) / (blood.contents.get(Reagent.R_BLOOD) * Reagent.BLOOD_CAP[Reagent.R_OXYGEN]));
+		}
+	}
+	
+	public static class PipeObstacleTile extends ObstacleTile {
+		private static final long serialVersionUID = 1L;
+		
+		PipeObstacleTile(int mask, int u, int v) {
+			super(u, v);
+			initNet(mask);
 		}
 	}
 	

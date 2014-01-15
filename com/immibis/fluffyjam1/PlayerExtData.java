@@ -32,7 +32,15 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 	// each food point gives enough to run idle for this many ticks (in normal configuration)
 	public static final int TICKS_PER_FOOD_POINT = 30 * 20;
 	
+	public static class ClientFakeFoodStats extends FoodStats {
+		@Override public void addExhaustion(float par1) {}
+		@Override public void addStats(int par1, float par2) {}
+		@Override public void onUpdate(EntityPlayer par1EntityPlayer) {}
+		@Override public boolean needFood() {return true;}
+	}
+	
 	private class FakeFoodStats extends FoodStats {
+		private int foodLevel, prevFoodLevel;
 		@Override
 		public void addExhaustion(float par1) {
 			// TODO Auto-generated method stub
@@ -45,6 +53,17 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 		}
 		@Override
 		public void onUpdate(EntityPlayer par1EntityPlayer) {
+			prevFoodLevel = foodLevel;
+			foodLevel = Math.min(20, (int)(data.food_level * 21));
+		}
+		@Override
+		public int getFoodLevel() {
+			return foodLevel;
+		}
+		@Override
+		@SideOnly(Side.CLIENT)
+		public int getPrevFoodLevel() {
+			return prevFoodLevel;
 		}
 		@Override
 		public boolean needFood() {
@@ -70,41 +89,31 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 		data.drowning = player.isInsideOfMaterial(Material.water);
 	}
 	
-	Reagents buffer1 = new Reagents(), buffer2 = new Reagents();
+	Reagents ebuffer = new Reagents();
 
 	
 	@Override
 	public void eject(Reagents r, int where) {
-		if(where == 1) {
-			buffer1.add(r);
-			
-			while(buffer1.getTotal() > 100) {
-				Reagents dropped = buffer1.getVolume(100);
-				buffer1.remove(dropped);
-				dropLiquid(dropped);
-			}
+		ebuffer.add(r);
 		
-		} else if(where == 2) {
-			buffer2.add(r);
-			while(buffer2.getTotal() >= 100) {
-				Reagents dropped = buffer2.getVolume(100);
-				buffer2.remove(dropped);
+		while(ebuffer.getTotal() > 100) {
+			Reagents dropped = ebuffer.getVolume(100);
+			ebuffer.remove(dropped);
+			
+			float tl = 0, ts = 0;
+			for(int k = 0; k < Reagent.COUNT; k++)
+				if(Reagent.IS_LIQUID[k])
+					tl += dropped.get(k);
+				else
+					ts += dropped.get(k);
+			
+			if(tl > ts)
+				dropLiquid(FluffyJam1Mod.blockF_u);
+			else
 				dropSolid(dropped);
-			}
-			
-		} else
-			throw new RuntimeException("unknown eject-location "+where);
-		
-		
+		}
 	}
 	
-	private void dropLiquid(Reagents dropped) {
-		if(dropped.get(Reagent.R_MWASTE) == 0)
-			dropLiquid(Block.waterStill);
-		else
-			dropLiquid(FluffyJam1Mod.blockF_u);
-	}
-
 	private boolean tryDropLiquid(Block block, World w, int x, int y, int z) {
 		if(!w.isAirBlock(x, y, z))
 			return false;

@@ -160,7 +160,7 @@ public class Reagents implements Serializable {
 		return capacity - total;
 	}
 
-	public double getFractionFull() {
+	public float getFractionFull() {
 		return total / capacity;
 	}
 }

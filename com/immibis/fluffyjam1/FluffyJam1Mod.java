@@ -302,7 +302,8 @@ public class FluffyJam1Mod implements IGuiHandler {
 		if(evt.entity instanceof EntityPlayerMP) {
 			PlayerExtData link = PlayerExtData.get((EntityPlayerMP)evt.entity);
 			ImmibisFJ1_ProtectedAccessProxy.setFoodStats((EntityPlayerMP)evt.entity, link.fakeFoodStats);
-		}
+		} else if(evt.entity instanceof EntityPlayer && evt.world.isRemote)
+			ImmibisFJ1_ProtectedAccessProxy.setFoodStats((EntityPlayer)evt.entity, new PlayerExtData.ClientFakeFoodStats());
 	}
 	
 	@ForgeSubscribe
