@@ -128,8 +128,11 @@ public class OpTableGUI extends GuiContainer {
 			int hoverx = (mousex - 8) / 12, hovery = (mousey - 6) / 12;
 			
 			if(hoverx >= 0 && hovery >= 0 && hoverx < 20 && hovery < 15) {
-				List<String> desc = guts.getTile(hoverx + scrollx, hovery + scrolly).describe();
-				drawHoveringText(desc, guiLeft+mousex, guiTop+mousey, fontRenderer);
+				Guts.Tile tile = guts.getTile(hoverx + scrollx, hovery + scrolly);
+				if(tile != null) {
+					List<String> desc = tile.describe();
+					drawHoveringText(desc, guiLeft+mousex, guiTop+mousey, fontRenderer);
+				}
 			}
 		}
 	}

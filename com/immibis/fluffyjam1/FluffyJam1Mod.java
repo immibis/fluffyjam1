@@ -52,6 +52,7 @@ import cpw.mods.fml.client.registry.KeyBindingRegistry;
 import cpw.mods.fml.client.registry.KeyBindingRegistry.KeyHandler;
 import cpw.mods.fml.common.ITickHandler;
 import cpw.mods.fml.common.Mod;
+import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.Mod.Instance;
 import cpw.mods.fml.common.TickType;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
@@ -223,6 +224,9 @@ public class FluffyJam1Mod implements IGuiHandler {
 			f_d.setIcons(evt.map.registerIcon("immibis_fluffyjam1:f_d"));
 		}
 	}
+	
+	@SidedProxy(clientSide="com.immibis.fluffyjam1.ClientInit", serverSide="com.immibis.fluffyjam1.EmptyRunnable")
+	public static Runnable clientInit;
 
 	@Mod.EventHandler
 	public void init(FMLInitializationEvent evt) {
@@ -287,59 +291,7 @@ public class FluffyJam1Mod implements IGuiHandler {
 			}
 		}, Side.SERVER);
 		
-		TickRegistry.registerTickHandler(new ITickHandler() {
-			
-			@Override
-			public EnumSet<TickType> ticks() {
-				return EnumSet.of(TickType.PLAYER);
-			}
-			
-			@Override
-			public void tickStart(EnumSet<TickType> type, Object... tickData) {
-				EntityPlayer pl = (EntityPlayer)tickData[0];
-				if(pl.openContainer instanceof OpTableContainer)
-					((OpTableContainer)pl.openContainer).clientTick();
-			}
-			
-			@Override
-			public void tickEnd(EnumSet<TickType> type, Object... tickData) {
-			}
-			
-			@Override
-			public String getLabel() {
-				return "immibis_fj3";
-			}
-		}, Side.CLIENT);
-		
-		final KeyBinding kb_p = new KeyBinding("P", Keyboard.KEY_P);
-		final KeyBinding kb_s = new KeyBinding("S", Keyboard.KEY_O);
-		KeyBindingRegistry.registerKeyBinding(new KeyHandler(new KeyBinding[] {kb_p, kb_s}, new boolean[] {false, false}) {
-			
-			@Override
-			public String getLabel() {
-				return "key handler";
-			}
-			
-			@Override
-			public EnumSet<TickType> ticks() {
-				return EnumSet.of(TickType.CLIENT);
-			}
-			
-			@Override
-			public void keyUp(EnumSet<TickType> types, KeyBinding kb, boolean tickEnd) {
-				
-			}
-			
-			@Override
-			public void keyDown(EnumSet<TickType> types, KeyBinding kb, boolean tickEnd, boolean isRepeat) {
-				if(!tickEnd) return;
-				
-				if(kb == kb_p)
-					PacketDispatcher.sendPacketToServer(TinyPacketHandler.getActionPacket(1));
-				if(kb == kb_s)
-					PacketDispatcher.sendPacketToServer(TinyPacketHandler.getActionPacket(2));
-			}
-		});
+		clientInit.run();
 		
 		MinecraftForge.EVENT_BUS.register(this);
 	}
