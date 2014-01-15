@@ -11,6 +11,8 @@ import com.jcraft.jorbis.Block;
 
 import net.minecraft.block.BlockFluid;
 import net.minecraft.block.material.Material;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -122,39 +124,96 @@ public class FluffyJam1Mod implements IGuiHandler {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_ALPHA_TEST);
 		
-		if(clientBrainFunction > 0.5)
-			GL11.glColor4f(0, 0, 0, (1 - clientBrainFunction) * 0.95f/0.5f);
-		else
-			GL11.glColor4f(0, 0, 0, 0.95f);
+		// darken screen depending on brain function level
+		{
+			if(clientBrainFunction > 0.5)
+				GL11.glColor4f(0, 0, 0, (1 - clientBrainFunction) * 0.95f/0.5f);
+			else
+				GL11.glColor4f(0, 0, 0, 0.95f);
+			
+			GL11.glBegin(GL11.GL_QUADS);
+			
+			GL11.glVertex2f(0, 0);
+			GL11.glVertex2f(0, evt.resolution.getScaledHeight());
+			GL11.glVertex2f(evt.resolution.getScaledWidth(), evt.resolution.getScaledHeight());
+			GL11.glVertex2f(evt.resolution.getScaledWidth(), 0);
+			
+			GL11.glEnd();
+		}
 		
-		//GL11.glColor4f(1,0,0,1f);
+		GL11.glColor3f(1, 1, 1);
 		
-		GL11.glBegin(GL11.GL_QUADS);
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
 		
-		GL11.glVertex2f(0, 0);
-		GL11.glVertex2f(0, evt.resolution.getScaledHeight());
-		GL11.glVertex2f(evt.resolution.getScaledWidth(), evt.resolution.getScaledHeight());
-		GL11.glVertex2f(evt.resolution.getScaledWidth(), 0);
+		// TODO move this
+		Bar.f.value = clientFoodLevel;
+		Bar.w.value = clientWaterLevel;
+		Bar.ex1.value = clientBladderBar;
+		Bar.ex2.value = clientPoopBar;
 		
-		int x = evt.resolution.getScaledWidth() - 100;
-		int w = 60;
-		int y = evt.resolution.getScaledHeight()*3/4;
-		int h = 5;
-		GL11.glColor4f(0.7f, 0.5f, 0, 1); drawBar(x, y, w, h, clientFoodLevel); y += h;
+		{
+			Minecraft.getMinecraft().renderEngine.bindTexture(TextureMap.locationItemsTexture);
+			
+			int x = evt.resolution.getScaledWidth() - 100;
+			int w = 60;
+			int y = evt.resolution.getScaledHeight()*3/4 - Bar.bars.length*4;
+			int h = 8;
+			int is = 8;
+			
+			for(int k = 0; k < Bar.bars.length; k++) {
+				Bar b = Bar.bars[k];
+				GL11.glColor3f(1, 1, 1);
+				if(b.icon != null)
+					drawIcon(x, y, is, is, b.icon);
+				int xb = x + is + 1;
+				
+				int wb = w - is - 1;
+				
+				GL11.glDisable(GL11.GL_TEXTURE_2D);
+				GL11.glBegin(GL11.GL_QUADS);
+				GL11.glColor3f(0, 0, 0); // background colour
+				GL11.glVertex2f(xb, y);
+				GL11.glVertex2f(xb, y+h);
+				GL11.glVertex2f(xb+wb, y+h);
+				GL11.glVertex2f(xb+wb, y);
+				
+				float wb2 = wb * b.value;
+				GL11.glColor3ub((byte)(b.colour >> 16), (byte)(b.colour >> 8), (byte)b.colour);
+				GL11.glVertex2f(xb+1, y+1);
+				GL11.glVertex2f(xb+1, y+h-1);
+				GL11.glVertex2f(xb+wb2-1, y+h-1);
+				GL11.glVertex2f(xb+wb2-1, y+1);
+				
+				GL11.glEnd();
+				GL11.glEnable(GL11.GL_TEXTURE_2D);
+				
+				y += h;
+			}
+		}
+		/*GL11.glBegin(GL11.GL_QUADS); GL11.glColor4f(0.7f, 0.5f, 0, 1); drawBar(x, y, w, h, clientFoodLevel); y += h;
 		GL11.glColor4f(0, 0, 1, 1); drawBar(x, y, w, h, clientWaterLevel); y += h;
 		GL11.glColor4f(1, 1, 0, 1); drawBar(x, y, w, h, clientBladderBar); y += h;
 		GL11.glColor4f(0.35f, 0.25f, 0, 1); drawBar(x, y, w, h, clientPoopBar); y += h;
 		GL11.glColor4f(0, 1, 0, 1); drawBar(x, y, w, h, clientBrainFunction); y += h;
-		
-		GL11.glEnd();
+		GL11.glEnd();*/
 		
 		GL11.glColor4f(1, 1, 1, 1);
 		
 		GL11.glEnable(GL11.GL_ALPHA_TEST);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		GL11.glEnable(GL11.GL_TEXTURE_2D);
 	}
 	
+	@SideOnly(Side.CLIENT)
+	private void drawIcon(int x, int y, int w, int h, Icon i) {
+		GL11.glBegin(GL11.GL_QUADS);
+		GL11.glTexCoord2f(i.getMinU(), i.getMinV()); GL11.glVertex2i(x, y);
+		GL11.glTexCoord2f(i.getMinU(), i.getMaxV()); GL11.glVertex2i(x, y+h);
+		GL11.glTexCoord2f(i.getMaxU(), i.getMaxV()); GL11.glVertex2i(x+w, y+h);
+		GL11.glTexCoord2f(i.getMaxU(), i.getMinV()); GL11.glVertex2i(x+w, y);
+		GL11.glEnd();
+	}
+
+	@SideOnly(Side.CLIENT)
 	private void drawBar(int x, int y, int w, int h, float f) {
 		float right = x + w * f;
 		GL11.glVertex2f(x, y);
@@ -163,6 +222,7 @@ public class FluffyJam1Mod implements IGuiHandler {
 		GL11.glVertex2f(right, y);
 	}
 	
+	@SideOnly(Side.CLIENT)
 	@ForgeSubscribe
 	public void onIconRegister(TextureStitchEvent.Pre evt) {
 		if(evt.map.textureType == 0) {
@@ -195,6 +255,8 @@ public class FluffyJam1Mod implements IGuiHandler {
 			{setQuantaPerBlock(3);}
 		};
 		blockF_d = new BlockFluidClassic(2202, f_d, Material.water);
+		
+		Bar.initEventHandler();
 		
 		NetworkRegistry.instance().registerGuiHandler(this, this);
 		NetworkRegistry.instance().registerChannel(new OpTableContainer.PacketHandler(), OpTableContainer.CHANNEL);
