@@ -10,21 +10,21 @@ import net.minecraftforge.event.ForgeSubscribe;
 
 /* Only used client-side */
 public class Bar {
-	public static final Bar f = new Bar("beef_cooked", 0xC08000);
-	public static final Bar w = new Bar("bucket_water", 0x0000FF);
-	public static final Bar ex1 = new Bar("x", 0xFFFF00);
-	public static final Bar ex2 = new Bar("x", 0x604000);
+	public static final Bar f = new Bar("beef_cooked", 0xC08000, 0.15f, Float.POSITIVE_INFINITY);
+	public static final Bar w = new Bar("bucket_water", 0x0000FF, 0.15f, Float.POSITIVE_INFINITY);
+	public static final Bar ex1 = new Bar("immibis_fluffyjam1:drop", 0xFFFF00, Float.NEGATIVE_INFINITY, 0.8f);
+	public static final Bar ex2 = new Bar("immibis_fluffyjam1:itemS", 0x604000, Float.NEGATIVE_INFINITY, 0.8f);
+	public static final Bar bf = new Bar("immibis_fluffyjam1:smiley", 0x00FF00, 0.6f, Float.POSITIVE_INFINITY);
 	public static final Bar[] bars = new Bar[] {
-		f, w, ex1, ex2
+		f, w, ex1, ex2, bf
 	};
 	
 	public String iconName;
 	@SideOnly(Side.CLIENT) public Icon icon;
 	public int colour;
 	public float value;
+	public float normalMin, normalMax;
 	
-	// yes, anything that relies on loading the class is dumb, and this should be an init() method that registers the
-	// event handlers
 	public static void initEventHandler() {
 		if(FMLLaunchHandler.side().isClient()) {
 			MinecraftForge.EVENT_BUS.register(new EventHandler());
@@ -41,10 +41,10 @@ public class Bar {
 		}
 	}
 	
-	private Bar(String iconName, int colour) {
+	private Bar(String iconName, int colour, float normalMin, float normalMax) {
 		this.iconName = iconName;
 		this.colour = colour;
-		
-		
+		this.normalMin = normalMin;
+		this.normalMax = normalMax;
 	}
 }

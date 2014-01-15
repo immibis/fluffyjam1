@@ -84,20 +84,16 @@ public class FluffyJam1Mod implements IGuiHandler {
 	public static FluffyJam1Mod INSTANCE;
 	
 	public static float clientBrainFunction;
-	public static float clientBladderBar;
-	public static float clientPoopBar;
-	public static float clientFoodLevel;
-	public static float clientWaterLevel;
 	
 	public static class TinyPacketHandler implements ITinyPacketHandler {
 		@Override
 		public void handle(NetHandler handler, Packet131MapData p) {
 			if(p.uniqueID == 0) {
-				clientBrainFunction = (p.itemData[0] & 255) / 255f;
-				clientBladderBar = (p.itemData[1] & 255) / 255f;
-				clientPoopBar = (p.itemData[2] & 255) / 255f;
-				clientFoodLevel = (p.itemData[3] & 255) / 255f;
-				clientWaterLevel = (p.itemData[4] & 255) / 255f;
+				Bar.bf.value = clientBrainFunction = (p.itemData[0] & 255) / 255f;
+				Bar.ex1.value = (p.itemData[1] & 255) / 255f;
+				Bar.ex2.value = (p.itemData[2] & 255) / 255f;
+				Bar.f.value = (p.itemData[3] & 255) / 255f;
+				Bar.w.value = (p.itemData[4] & 255) / 255f;
 			}
 			if(p.uniqueID == 1)
 				PlayerExtData.get(((NetServerHandler)handler).playerEntity).empty(1);
@@ -145,13 +141,9 @@ public class FluffyJam1Mod implements IGuiHandler {
 		
 		GL11.glEnable(GL11.GL_TEXTURE_2D);
 		
-		// TODO move this
-		Bar.f.value = clientFoodLevel;
-		Bar.w.value = clientWaterLevel;
-		Bar.ex1.value = clientBladderBar;
-		Bar.ex2.value = clientPoopBar;
-		
 		{
+			boolean flashTimer = (System.currentTimeMillis() % 1000) > 500;
+			
 			Minecraft.getMinecraft().renderEngine.bindTexture(TextureMap.locationItemsTexture);
 			
 			int x = evt.resolution.getScaledWidth() - 100;
@@ -169,9 +161,16 @@ public class FluffyJam1Mod implements IGuiHandler {
 				
 				int wb = w - is - 1;
 				
+				boolean flashThisBar = b.value < b.normalMin || b.value > b.normalMax;
+				
 				GL11.glDisable(GL11.GL_TEXTURE_2D);
 				GL11.glBegin(GL11.GL_QUADS);
-				GL11.glColor3f(0, 0, 0); // background colour
+				
+				// background
+				if(flashThisBar && flashTimer)
+					GL11.glColor3f(1, 0, 0);
+				else
+					GL11.glColor3f(0, 0, 0);
 				GL11.glVertex2f(xb, y);
 				GL11.glVertex2f(xb, y+h);
 				GL11.glVertex2f(xb+wb, y+h);
@@ -190,12 +189,6 @@ public class FluffyJam1Mod implements IGuiHandler {
 				y += h;
 			}
 		}
-		/*GL11.glBegin(GL11.GL_QUADS); GL11.glColor4f(0.7f, 0.5f, 0, 1); drawBar(x, y, w, h, clientFoodLevel); y += h;
-		GL11.glColor4f(0, 0, 1, 1); drawBar(x, y, w, h, clientWaterLevel); y += h;
-		GL11.glColor4f(1, 1, 0, 1); drawBar(x, y, w, h, clientBladderBar); y += h;
-		GL11.glColor4f(0.35f, 0.25f, 0, 1); drawBar(x, y, w, h, clientPoopBar); y += h;
-		GL11.glColor4f(0, 1, 0, 1); drawBar(x, y, w, h, clientBrainFunction); y += h;
-		GL11.glEnd();*/
 		
 		GL11.glColor4f(1, 1, 1, 1);
 		
