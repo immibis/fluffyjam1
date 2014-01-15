@@ -1,5 +1,7 @@
 package com.immibis.fluffyjam1;
 
+import cpw.mods.fml.common.network.PacketDispatcher;
+import cpw.mods.fml.common.network.Player;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
@@ -54,7 +56,7 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 		@Override
 		public void onUpdate(EntityPlayer par1EntityPlayer) {
 			prevFoodLevel = foodLevel;
-			foodLevel = Math.min(20, (int)(data.food_level * 21));
+			foodLevel = Math.min(20, (int)(data.fbar * 21));
 		}
 		@Override
 		public int getFoodLevel() {
@@ -81,9 +83,16 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 	}
 	
 	public void tick() {
+		data.leg_energy_level = 1;
+		data.is_sprinting = player.isSprinting();
 		data.tick();
 		
-		player.playerNetServerHandler.sendPacketToPlayer(FluffyJam1Mod.TinyPacketHandler.getBrainFunctionPacket(data.brain_function, data.bladder, data.poop, data.food_level, data.water_level));
+		if(player.isSprinting() && data.leg_energy_level < 0.8f) {
+			player.setSprinting(false);
+			PacketDispatcher.sendPacketToPlayer(FluffyJam1Mod.TinyPacketHandler.getActionPacket(100), (Player)player);
+		}
+		
+		player.playerNetServerHandler.sendPacketToPlayer(FluffyJam1Mod.TinyPacketHandler.getBrainFunctionPacket(data.brain_function, data.ex1bar, data.ex2bar, data.fbar, data.wbar));
 		player.setAir((int)(300 * data.oxygen_level));
 		
 		data.drowning = player.isInsideOfMaterial(Material.water);

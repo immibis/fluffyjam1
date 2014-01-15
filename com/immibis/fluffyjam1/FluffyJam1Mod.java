@@ -65,6 +65,7 @@ import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.network.PacketDispatcher;
 import cpw.mods.fml.common.network.Player;
 import cpw.mods.fml.common.registry.TickRegistry;
+import cpw.mods.fml.relauncher.FMLLaunchHandler;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -100,6 +101,8 @@ public class FluffyJam1Mod implements IGuiHandler {
 				PlayerExtData.get(((NetServerHandler)handler).playerEntity).empty(1);
 			if(p.uniqueID == 2)
 				PlayerExtData.get(((NetServerHandler)handler).playerEntity).empty(2);
+			if(p.uniqueID == 100)
+				proxy.stopSprinting();
 		}
 		
 		public static Packet getBrainFunctionPacket(float bf, float bl, float p, float f, float w) {
@@ -225,8 +228,8 @@ public class FluffyJam1Mod implements IGuiHandler {
 		}
 	}
 	
-	@SidedProxy(clientSide="com.immibis.fluffyjam1.ClientInit", serverSide="com.immibis.fluffyjam1.EmptyRunnable")
-	public static Runnable clientInit;
+	@SidedProxy(clientSide="com.immibis.fluffyjam1.ProxyClient", serverSide="com.immibis.fluffyjam1.ProxyBase")
+	public static ProxyBase proxy;
 
 	@Mod.EventHandler
 	public void init(FMLInitializationEvent evt) {
@@ -291,7 +294,7 @@ public class FluffyJam1Mod implements IGuiHandler {
 			}
 		}, Side.SERVER);
 		
-		clientInit.run();
+		proxy.init();
 		
 		MinecraftForge.EVENT_BUS.register(this);
 	}

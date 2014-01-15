@@ -95,6 +95,7 @@ public final class Guts implements Serializable {
 		case 'X': return new PipeCrossTile(parseDirList(def.substring(1)), 15^parseDirList(def.substring(1)));
 		case 'T': return new TankTile();
 		case 'B': return new BrainTile();
+		case 'G': return new LegTile();
 		case 'S': return new SensorTile(Integer.parseInt(def.substring(1), 10));
 		case 'K':  {
 			String[] p = def.substring(1).split(",");
@@ -134,8 +135,10 @@ public final class Guts implements Serializable {
 	public static final float MAX_BLOOD_WATER = 1.0f; // target ratio of water:blood - kidneys will remove excess 
 	
 	// energy units per tick, aka EU/t
-	public static final float METAB_RATE_BRAIN = 1.0f / 20f;
-	public static final float METAB_RATE_HEART = 0.1f / 20f;
+	public static final float METAB_RATE_BRAIN		= 1.0f / 20f;
+	public static final float METAB_RATE_HEART		= 0.1f / 20f;
+	public static final float METAB_RATE_LEG		= 0.2f / 20f;
+	public static final float METAB_RATE_LEG_SPRINT	= 2.0f / 20f;
 	
 	
 	// The amount of oxygen and food used, and mwaste produced, per energy unit (in mL/EU)
@@ -520,9 +523,9 @@ public final class Guts implements Serializable {
 		public void tick() {
 			float value = nets[D_U].contents.getFractionFull();
 			if(id == 1)
-				bladder = value;
+				ex1bar = value;
 			else if(id == 2)
-				poop = value;
+				ex2bar = value;
 		}
 		
 		@Override
@@ -535,9 +538,27 @@ public final class Guts implements Serializable {
 	public float brain_function;
 	
 	// 0 = empty, 1 = full
-	public float bladder, poop, food_level, water_level, oxygen_level;
+	public float ex1bar, ex2bar, fbar, wbar, oxygen_level;
 	
 	public boolean drowning;
+	
+	public float leg_energy_level;
+	public boolean is_sprinting;
+	
+	public class LegTile extends Tile {
+		private static final long serialVersionUID = 1L;
+		
+		LegTile() {
+			initNet(DM_U);
+		}
+		
+		@Override
+		public void tick() {
+			float energy_req = is_sprinting ? METAB_RATE_LEG_SPRINT : METAB_RATE_LEG;
+			float energy_level_here = metabolize(nets[D_U].contents, nets[D_U].new_contents, energy_req, 1) / energy_req;
+			leg_energy_level = Math.min(leg_energy_level, energy_level_here);
+		}
+	}
 	
 	public class BrainTile extends Tile {
 		private static final long serialVersionUID = 1L;
@@ -575,8 +596,8 @@ public final class Guts implements Serializable {
 			if(energy_avail_pct < 0.05f)
 				brain_function = Math.min(brain_function, 0.75f);
 			
-			food_level = Math.min(1, blood.contents.get(Reagent.R_FOOD) / (blood.contents.get(Reagent.R_BLOOD) * Reagent.BLOOD_CAP[Reagent.R_FOOD]));
-			water_level = Math.min(1, blood.contents.get(Reagent.R_WATER) / (blood.contents.get(Reagent.R_BLOOD) * Reagent.BLOOD_CAP[Reagent.R_WATER]));
+			fbar = Math.min(1, blood.contents.get(Reagent.R_FOOD) / (blood.contents.get(Reagent.R_BLOOD) * Reagent.BLOOD_CAP[Reagent.R_FOOD]));
+			wbar = Math.min(1, blood.contents.get(Reagent.R_WATER) / (blood.contents.get(Reagent.R_BLOOD) * Reagent.BLOOD_CAP[Reagent.R_WATER]));
 			oxygen_level = Math.min(1, blood.contents.get(Reagent.R_OXYGEN) / (blood.contents.get(Reagent.R_BLOOD) * Reagent.BLOOD_CAP[Reagent.R_OXYGEN]));
 		}
 	}

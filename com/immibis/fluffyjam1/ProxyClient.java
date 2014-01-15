@@ -19,9 +19,15 @@ import cpw.mods.fml.common.network.PacketDispatcher;
 import cpw.mods.fml.common.registry.TickRegistry;
 import cpw.mods.fml.relauncher.Side;
 
-public class ClientInit implements Runnable {
+public class ProxyClient extends ProxyBase {
+	
 	@Override
-	public void run() {
+	public void stopSprinting() {
+		Minecraft.getMinecraft().thePlayer.setSprinting(false);
+	}
+	
+	@Override
+	public void init() {
 		TickRegistry.registerTickHandler(new ITickHandler() {
 			
 			@Override
