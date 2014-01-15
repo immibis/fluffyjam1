@@ -163,4 +163,9 @@ public class Reagents implements Serializable {
 	public float getFractionFull() {
 		return total / capacity;
 	}
+
+	public void convertAll(int idFrom, int idTo) {
+		add(idTo, get(idFrom));
+		set(idFrom, 0);
+	}
 }

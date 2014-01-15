@@ -31,8 +31,6 @@ public class OpTableBlock extends BlockBed {
 		setUnlocalizedName("immibis.fj1.optable");
 		disableStats();
 		setTextureName("bed");
-		
-		GameRegistry.registerBlock(this, OpTableItem.class, "optable");
 	}
 	
 	public static EntityPlayer getPlayerInBed(World w, int x, int y, int z) {

@@ -64,6 +64,7 @@ import cpw.mods.fml.common.network.NetworkMod;
 import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.network.PacketDispatcher;
 import cpw.mods.fml.common.network.Player;
+import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.TickRegistry;
 import cpw.mods.fml.relauncher.FMLLaunchHandler;
 import cpw.mods.fml.relauncher.Side;
@@ -74,9 +75,12 @@ import cpw.mods.fml.relauncher.SideOnly;
 public class FluffyJam1Mod implements IGuiHandler {
 	public static OpTableBlock blockOT;
 	public static BlockFluidBase blockF_u, blockF_d;
+	public static OneBlock block1;
 	public static Item itemS;
 	
-	public static int GUI_OP_TABLE = 1;
+	public static final int REAGENT_PER_BLOCK = 200;
+	
+	public static final int GUI_OP_TABLE = 1;
 	
 	public static Fluid f_u, f_d;
 	
@@ -234,6 +238,7 @@ public class FluffyJam1Mod implements IGuiHandler {
 	@Mod.EventHandler
 	public void init(FMLInitializationEvent evt) {
 		blockOT = new OpTableBlock(2200);
+		block1 = new OneBlock(2203);
 		itemS = new Item(22000).setUnlocalizedName("immibis.fj1.itemS").setMaxStackSize(1).setTextureName("immibis_fluffyjam1:itemS");
 		
 		f_u = new Fluid("FJ1IMBU");
@@ -257,6 +262,11 @@ public class FluffyJam1Mod implements IGuiHandler {
 		blockF_d = new BlockFluidClassic(2202, f_d, Material.water);
 		
 		Bar.initEventHandler();
+		
+		GameRegistry.registerBlock(blockOT, OpTableItem.class, "optable");
+		GameRegistry.registerBlock(blockF_u, "fu");
+		GameRegistry.registerBlock(blockF_d, "fd");
+		GameRegistry.registerBlock(block1, "1");
 		
 		NetworkRegistry.instance().registerGuiHandler(this, this);
 		NetworkRegistry.instance().registerChannel(new OpTableContainer.PacketHandler(), OpTableContainer.CHANNEL);
@@ -297,6 +307,8 @@ public class FluffyJam1Mod implements IGuiHandler {
 		proxy.init();
 		
 		MinecraftForge.EVENT_BUS.register(this);
+		
+		GameRegistry.registerTileEntity(OneTile.class, "immibis_fj1.tile1");
 	}
 	
 	@ForgeSubscribe

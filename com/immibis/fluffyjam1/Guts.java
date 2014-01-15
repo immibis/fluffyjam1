@@ -370,6 +370,11 @@ public final class Guts implements Serializable {
 			final float WATER_TO_MWASTE_RATIO = 0.5f;
 			final float EXCESS_WATER_REMOVE_RATE = 0.3f;
 			final float MWASTE_REMOVE_RATE = 0.8f;
+			final float STOOL_TO_MWASTE_RATE = 80f;
+			
+			float s = Math.min(transfer.get(Reagent.R_STOOL), transfer.getDissolveSpace(Reagent.R_MWASTE) / STOOL_TO_MWASTE_RATE);
+			transfer.remove(Reagent.R_STOOL, s);
+			transfer.add(Reagent.R_MWASTE, s*STOOL_TO_MWASTE_RATE);
 			
 			float transfer_water_pct = transfer.get(Reagent.R_WATER) / transfer.get(Reagent.R_BLOOD);
 			float transfer_excess_water = Math.max(0, transfer.get(Reagent.R_WATER) * (transfer_water_pct - MAX_BLOOD_WATER)); 
@@ -390,11 +395,9 @@ public final class Guts implements Serializable {
 				drain.new_contents.add(Reagent.R_MWASTE, mwaste_removed);
 			}
 			
-			//System.out.print(transfer+" --- ");
 			transfer.pourInto(to.new_contents);
-			//System.out.println(transfer);
-			//from.new_contents.add(transfer);
 			transfer.pourInto(from.new_contents);
+			transfer.pourInto(drain.new_contents);
 		}
 	}
 	
@@ -451,7 +454,7 @@ public final class Guts implements Serializable {
 		public void tick() {
 			PipeNetwork pn = nets[D_U];
 			
-			Reagents transfer = pn.contents.getVolume(10);
+			Reagents transfer = pn.contents.getVolume(30);
 			pn.new_contents.remove(transfer);
 			if(listener != null)
 				listener.eject(transfer, this.id);
@@ -480,8 +483,13 @@ public final class Guts implements Serializable {
 			PipeNetwork net_out = nets[horiz ? D_R : D_D];
 			PipeNetwork net_blood = nets[horiz ? D_U : D_L];
 			
+			/*if(net_in.contents.getFractionFull() > 0.5f) {
+				net_in.new_contents.remove(Reagent.R_STOOL, net_out.new_contents.addRespectingCapacity(Reagent.R_STOOL, Math.min(net_in.new_contents.get(Reagent.R_STOOL), net_in.contents.get(Reagent.R_STOOL))));
+			}*/
+				
 			float flow = calcFlow(net_in, net_out);
-			flow = Math.max(Math.min(flow, 1), 0.1f);
+			flow = Math.min(flow, 1);
+			flow = Math.max(flow, 0.1f);
 			
 			Reagents blood = net_blood.contents, new_blood = net_blood.new_contents;
 			//float max_food_transfer = new_blood.getDissolveSpace(Reagent.R_FOOD);

@@ -103,7 +103,17 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 	
 	@Override
 	public void eject(Reagents r, int where) {
+		if(r.getTotal() == 0)
+			return;
+		
 		ebuffer.add(r);
+		
+		int x = MathHelper.floor_double(player.posX);
+		int y = MathHelper.floor_double(player.posY) - 1;
+		int z = MathHelper.floor_double(player.posZ);
+		if(player.worldObj.blockExists(x, y, z) && player.worldObj.getBlockId(x, y, z) == FluffyJam1Mod.block1.blockID) {
+			((OneTile)player.worldObj.getBlockTileEntity(x, y, z)).accept(ebuffer);
+		}
 		
 		while(ebuffer.getTotal() > 100) {
 			Reagents dropped = ebuffer.getVolume(100);
