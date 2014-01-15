@@ -49,19 +49,21 @@ public class OpTableGUI extends GuiContainer {
 					case Guts.DM_L | Guts.DM_R: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 84, 192, 12, 12); break;
 					}
 				} else if(t instanceof Guts.NoseTile)
-					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 0, 216, 12, 12);
+					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 156, 216, 12, 12);
 				else if(t instanceof Guts.LungTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 12, 216, 12, 12);
 				else if(t instanceof Guts.IntestineTile)
-					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 12, 228, 12, 12);
+					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 12, 228 + (((Guts.IntestineTile)t).horiz ? 12 : 0), 12, 12);
 				else if(t instanceof Guts.HeartTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 0, 228, 12, 12);
 				else if(t instanceof Guts.OrificeTile)
-					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 24, 228, 12, 12);
+					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 132, 228, 12, 12);
 				else if(t instanceof Guts.BrainTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 36, 228, 12, 12);
 				else if(t instanceof Guts.KidneyTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 48, 228, 12, 12);
+				else if(t instanceof Guts.ObstacleTile)
+					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, ((Guts.ObstacleTile)t).u, ((Guts.ObstacleTile)t).v, 12, 12);
 			}
 		
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -85,11 +87,11 @@ public class OpTableGUI extends GuiContainer {
 						break;
 					case Guts.DM_L | Guts.DM_R | Guts.DM_U:
 						drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 12, 6);
-						drawReagents(t.nets[Guts.D_U].new_contents, px+3, py, 6, 3);
+						drawReagents(t.nets[Guts.D_L].new_contents, px+3, py, 6, 3);
 						break;
 					case Guts.DM_L | Guts.DM_R | Guts.DM_D:
 						drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 12, 6);
-						drawReagents(t.nets[Guts.D_U].new_contents, px+3, py+9, 6, 3);
+						drawReagents(t.nets[Guts.D_L].new_contents, px+3, py+9, 6, 3);
 						break;
 					}
 				} else if(t instanceof Guts.PipeCrossTile) {
@@ -113,7 +115,7 @@ public class OpTableGUI extends GuiContainer {
 						break;
 					}
 				} else if(t instanceof Guts.TankTile)
-					drawReagents(((Guts.TankTile)t).r, px+1, py+1, 10, 10);
+					drawReagents(t.nets[Guts.D_U].new_contents, px+1, py+1, 10, 10);
 			}
 		
 		GL11.glEnd();
@@ -125,8 +127,8 @@ public class OpTableGUI extends GuiContainer {
 		if(Mouse.isButtonDown(0)) {
 			int hoverx = (mousex - 8) / 12, hovery = (mousey - 6) / 12;
 			
-			if(guts.validCoords(hoverx, hovery)) {
-				List<String> desc = guts.getTile(hoverx, hovery).describe();
+			if(hoverx >= 0 && hovery >= 0 && hoverx < 20 && hovery < 15) {
+				List<String> desc = guts.getTile(hoverx + scrollx, hovery + scrolly).describe();
 				drawHoveringText(desc, guiLeft+mousex, guiTop+mousey, fontRenderer);
 			}
 		}

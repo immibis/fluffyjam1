@@ -26,45 +26,47 @@ public final class Guts implements Serializable {
 			w = 0;
 			h = 0;
 			String l;
-			while(!(l = s.readLine()).equals("END")) {
-				w = l.length();
+			while(!(l = s.readLine()).equals("END"));
+			w = s.readLine().length();
+			while((l = s.readLine()) != null)
 				h++;
-			}
 			
 			s.close();
 			s = new BufferedReader(new InputStreamReader(Guts.class.getResourceAsStream("default.txt")));
 			
+			String[] defs = new String[256];
+			while(!(l = s.readLine()).equals("END"))
+				defs[l.charAt(0)] = l.substring(2);
+			
+			
+			s.readLine(); // skip width marker line
+			
+			
 			tiles = new Tile[w*h];
 			
-			
-			char[] chars = new char[tiles.length];
-			
-			for(int k = 0; k < tiles.length; k++) {
-				char c;
-				do
-					c = (char)s.read();
-				while(c == '\r' || c == '\n');
-				chars[k] = c;
+			for(int y = 0; y < h; y++) {
+				l = s.readLine();
+				
+				String[] xdata = l.substring(w).trim().split(" ");
+				
+				for(int x = 0; x < w; x++) {
+					char c = (x < l.length() ? l.charAt(x) : '#');
+					int k = x + y*w;
+					
+					if(c == ' ')
+						tiles[k] = EmptyTile.instance;
+					else if(c >= '1' && c <= '9')
+						tiles[k] = createTileFromDef(xdata[c - '1']);
+					else if(defs[c] == null)
+						throw new RuntimeException("not defined: "+c);
+					else
+						tiles[k] = createTileFromDef(defs[c]);
+				}
 			}
-			while(s.read() != '\n');
-			
-			assert s.readLine().equals("END");
-		
-			String[] defs = new String[256];
-			while((l = s.readLine()) != null)
-				defs[l.charAt(0)] = l.substring(2);
 			
 			s.close();
 			
-			for(int k = 0; k < tiles.length; k++)
-				if(chars[k] == ' ')
-					tiles[k] = EmptyTile.instance;
-				else if(defs[chars[k]] == null)
-					throw new RuntimeException("not defined: "+chars[k]);
-				else
-					tiles[k] = createTileFromDef(defs[chars[k]]);
-			
-			} catch(IOException e) {
+		} catch(IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -88,14 +90,21 @@ public final class Guts implements Serializable {
 		case 'H': return new HeartTile();
 		case 'L': return new LungTile();
 		case 'P': return new PipeTile(parseDirList(def.substring(1)));
-		case 'I': return new IntestineTile();
+		case 'I': return new IntestineTile(def.equals("IH"));
 		case 'X': return new PipeCrossTile(parseDirList(def.substring(1)), 15^parseDirList(def.substring(1)));
 		case 'T': return new TankTile();
 		case 'B': return new BrainTile();
 		case 'K': return new KidneyTile();
-		case '1': return new OrificeTile(1);
-		case '2': return new OrificeTile(2);
-		case 'V': return new ValveTile();
+		case 'O': return new OrificeTile(Integer.parseInt(def.substring(1), 10));
+		case 'V':
+			if(def.charAt(1) == 'A')
+				return new ValveTile(Integer.parseInt(def.substring(2), 10), true);
+			else
+				return new ValveTile(Integer.parseInt(def.substring(1), 10), false);
+		case '#': {
+			String[] p = def.substring(1).split(",");
+			return new ObstacleTile(Integer.parseInt(p[0], 10), Integer.parseInt(p[1], 10));
+		}
 		default:
 			throw new AssertionError("invalid: "+def);
 		}
@@ -207,7 +216,7 @@ public final class Guts implements Serializable {
 		private static final long serialVersionUID = 1L;
 		
 		MouthTile() {
-			initNets(DM_D);
+			initNets(DM_R);
 		}
 		
 		int ticks = 0;
@@ -218,7 +227,7 @@ public final class Guts implements Serializable {
 			//	nets[D_D].new_contents.set(Reagent.R_FOOD, 80.0f);
 			//	nets[D_D].new_contents.set(Reagent.R_WATER, 30.0f);
 			//}
-			mouthBuffer.pourInto(nets[D_D].new_contents);
+			mouthBuffer.pourInto(nets[D_R].new_contents);
 		}
 	}
 	
@@ -226,16 +235,18 @@ public final class Guts implements Serializable {
 		private static final long serialVersionUID = 1L;
 		
 		NoseTile() {
-			initNets(DM_D);
+			initNets(DM_R);
 		}
 		
 		@Override
 		public void tick() {
 			
-			Reagents to_remove = nets[D_D].contents.getFraction(0.05f);
-			nets[D_D].new_contents.remove(to_remove);
+			final float EXCH_VOLUME = 3f; 
 			
-			nets[D_D].new_contents.addRespectingCapacity(drowning ? Reagent.R_WATER : Reagent.R_OXYGEN, 3);
+			Reagents to_remove = nets[D_R].contents.getFraction(EXCH_VOLUME / nets[D_R].contents.capacity);
+			nets[D_R].new_contents.remove(to_remove);
+			
+			nets[D_R].new_contents.addRespectingCapacity(drowning ? Reagent.R_WATER : Reagent.R_OXYGEN, EXCH_VOLUME);
 		}
 	}
 	
@@ -299,26 +310,33 @@ public final class Guts implements Serializable {
 		private static final long serialVersionUID = 1L;
 		
 		KidneyTile() {
-			initNets(DM_L | DM_R | DM_D);
+			initNets(DM_U | DM_D);
+			initNet(DM_L | DM_R);
 		}
 		
 		@Override
 		public void tick() {
-			float flow = calcFlow(nets[D_L], nets[D_R]);
+			float flow = calcFlow(nets[D_U], nets[D_D]);
 			
-			checkCap(nets[D_L]);
-			checkCap(nets[D_R]);
+			checkCap(nets[D_U]);
+			checkCap(nets[D_D]);
+			
+			PipeNetwork drain = nets[D_L];
+			
+			flow *= 0.3f;
 			
 			if(flow > 0) {
-				doKidneyStuff(nets[D_L], nets[D_R], flow);
+				doKidneyStuff(nets[D_U], nets[D_D], drain, flow);
 			} else {
-				doKidneyStuff(nets[D_R], nets[D_L], -flow);
+				doKidneyStuff(nets[D_D], nets[D_U], drain, -flow);
 			}
 		}
 		
 		private void checkCap(PipeNetwork pn) {
 			if(pn.contents.getTotal() > pn.contents.capacity * 0.9f) {
-				Reagents remove = pn.contents.getVolume(pn.contents.getTotal() - pn.contents.capacity * 0.9f);
+				float to_remove = pn.contents.getTotal() - pn.contents.capacity * 0.9f;
+				to_remove *= 0.2f;
+				Reagents remove = pn.contents.getVolume(to_remove);
 				pn.new_contents.remove(remove);
 				remove.set(Reagent.R_BLOOD, 0);
 				remove.pourInto(nets[D_D].new_contents);
@@ -326,7 +344,7 @@ public final class Guts implements Serializable {
 			}
 		}
 
-		private void doKidneyStuff(PipeNetwork from, PipeNetwork to, float flow) {
+		private void doKidneyStuff(PipeNetwork from, PipeNetwork to, PipeNetwork drain, float flow) {
 			
 			Reagents transfer = from.contents.getVolume(flow);
 			from.new_contents.remove(transfer);
@@ -335,8 +353,6 @@ public final class Guts implements Serializable {
 				from.new_contents.add(transfer);
 				return;
 			}
-			
-			PipeNetwork drain = nets[D_D];
 			
 			final float WATER_TO_MWASTE_RATIO = 0.5f;
 			final float EXCESS_WATER_REMOVE_RATE = 0.3f;
@@ -372,17 +388,25 @@ public final class Guts implements Serializable {
 	public class ValveTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
-		ValveTile() {
+		int id;
+		boolean autoOpen;
+		
+		ValveTile(int id, boolean autoOpen) {
 			initNet(DM_U | DM_L);
 			initNet(DM_D | DM_R);
+			this.id = id;
+			this.autoOpen = autoOpen;
 		}
 		
 		boolean open = false;
 		
 		@Override
 		public void tick() {
+			if(autoOpen && !open && nets[D_U].new_contents.getFractionFull() > 0.99)
+				open = true;
+			
 			if(open) {
-				if(nets[D_U].new_contents.getTotal() < 3)
+				if(nets[D_U].new_contents.getFractionFull() < 0.01)
 					open = false;
 				
 				nets[D_U].new_contents.pourInto(nets[D_D].new_contents);
@@ -403,56 +427,58 @@ public final class Guts implements Serializable {
 	public class OrificeTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
-		int number;
+		int id;
 		
-		OrificeTile(int number) {
+		OrificeTile(int id) {
 			initNet(DM_U | DM_D | DM_L | DM_R);
-			this.number = number;
+			this.id = id;
 		}
-		
-		//boolean open = false;
 		
 		@Override
 		public void tick() {
 			PipeNetwork pn = nets[D_U];
 			
-			//if(pn.contents.getTotal() > pn.contents.capacity * 0.9f)
-			//	open = true;
-			//if(pn.contents.getTotal() < pn.contents.capacity * 0.1f)
-			//	open = false;
-			
-			//if(open) {
-				Reagents transfer = pn.new_contents.getFraction(1);
-				pn.new_contents.remove(transfer);
-				if(listener != null)
-					listener.eject(transfer, this.number);
-			//}
+			Reagents transfer = pn.contents.getVolume(10);
+			pn.new_contents.remove(transfer);
+			if(listener != null)
+				listener.eject(transfer, this.id);
 		}
 	}
 	
 	public static class IntestineTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
-		IntestineTile() {
-			initNets(DM_U | DM_D);
-			initNet(DM_L | DM_R);
+		boolean horiz;
+		IntestineTile(boolean horiz) {
+			this.horiz = horiz;
+			
+			if(horiz) {
+				initNets(DM_L | DM_R);
+				initNet(DM_U | DM_D);
+			} else {
+				initNets(DM_U | DM_D);
+				initNet(DM_L | DM_R);
+			}
 		}
 		
 		@Override
 		public void tick() {
-			float flow = calcFlow(nets[D_U], nets[D_D]);
+			PipeNetwork net_in = nets[horiz ? D_L : D_U];
+			PipeNetwork net_out = nets[horiz ? D_R : D_D];
+			PipeNetwork net_blood = nets[horiz ? D_U : D_L];
 			
+			float flow = calcFlow(net_in, net_out);
 			flow = Math.max(Math.min(flow, 1), 0.1f);
 			
-			Reagents blood = nets[D_L].contents, new_blood = nets[D_L].new_contents;
+			Reagents blood = net_blood.contents, new_blood = net_blood.new_contents;
 			//float max_food_transfer = new_blood.getDissolveSpace(Reagent.R_FOOD);
 			
-			Reagents transfer = nets[D_U].contents.getVolume(flow);
+			Reagents transfer = net_in.contents.getVolume(flow);
 			
 			//if(transfer.get(Reagent.R_FOOD) > max_food_transfer)
 			//	transfer.set(Reagent.R_FOOD, max_food_transfer);
 			
-			nets[D_U].new_contents.remove(transfer);
+			net_in.new_contents.remove(transfer);
 			
 			float avail_food = transfer.get(Reagent.R_FOOD);
 			float used_food = avail_food * 0.3f;
@@ -466,9 +492,9 @@ public final class Guts implements Serializable {
 			
 			
 			
-			transfer.pourInto(nets[D_D].new_contents);
-			transfer.pourInto(nets[D_L].new_contents);
-			transfer.pourInto(nets[D_U].new_contents);
+			transfer.pourInto(net_out.new_contents);
+			transfer.pourInto(net_blood.new_contents);
+			transfer.pourInto(net_in.new_contents);
 		}
 	}
 	
@@ -488,7 +514,7 @@ public final class Guts implements Serializable {
 		}
 		
 		// So you don't die immediately.
-		float startup_food = 0;
+		float startup_food = FOOD_USE_RATE_IDLE * 200f;
 		float startup_water = 50;
 		
 		@Override
@@ -548,41 +574,22 @@ public final class Guts implements Serializable {
 	public class TankTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
-		Reagents r = new Reagents();
-		PipeNetwork internal_net = new PipeNetwork();
 		public TankTile() {
-			initNet(DM_L | DM_U);
-			initNet(DM_D | DM_R);
-			r.capacity = 1000;
-			internal_net.contents = internal_net.new_contents = r;
-		}
-		
-		@Override
-		public void tick() {
-			PipeNetwork in = nets[D_L], out = nets[D_R];
-			
-			// input
-			Reagents transfer = in.contents.getFraction(1f);
-			in.new_contents.remove(transfer);
-			transfer.pourInto(r);
-			transfer.pourInto(in.new_contents);
-			
-			// output
-			r.pourInto(out.new_contents);
-			float pct_full = r.getTotal() / r.capacity;
-			float flow = calcFlow(internal_net, out) + 10;
-			
-			transfer = r.getVolume(flow);
-			
-			if(r.get(Reagent.R_STOOL) > 0)
-				poop = r.getTotal() / r.capacity;
-			if(r.get(Reagent.R_MWASTE) > 0)
-				bladder = r.getTotal() / r.capacity;
+			initNet(DM_L | DM_R | DM_U | DM_D);
 		}
 		
 		@Override
 		public List<String> describe() {
-			return r.describe();
+			return nets[D_L].contents.describe();
+		}
+	}
+	
+	public static class ObstacleTile extends Tile {
+		public int u, v;
+		
+		ObstacleTile(int u, int v) {
+			this.u = u;
+			this.v = v;
 		}
 	}
 
@@ -607,6 +614,7 @@ public final class Guts implements Serializable {
 		Reagents contents, new_contents;
 		int size; // number of tile-sides in this network
 		boolean leak;
+		Set<Tile> tiles = new HashSet<Tile>();
 		
 		// used when building networks - disjoint set data structure
 		PipeNetwork parent;
@@ -650,6 +658,7 @@ public final class Guts implements Serializable {
 						if(n[k] != null) {
 							PipeNetwork pn = n[k];
 							nets.add(n[k] = pn.getRoot());
+							n[k].tiles.add(tiles[x + y*w]);
 							n[k].leak |= pn.leak;
 							// increment n[k].size if this tile-side is actually connected to another tile-side
 							switch(k) {
@@ -667,7 +676,13 @@ public final class Guts implements Serializable {
 			if(pn.size == 0) pn.size = 1;
 			pn.contents = new Reagents();
 			pn.new_contents = new Reagents();
-			pn.contents.capacity = pn.new_contents.capacity = 30 * pn.size; 
+			pn.contents.capacity = 10 * pn.tiles.size();
+			
+			for(Tile t : pn.tiles)
+				if(t instanceof TankTile)
+					pn.contents.capacity += 100;
+			
+			pn.new_contents.capacity = pn.contents.capacity;
 		}
 	}
 	

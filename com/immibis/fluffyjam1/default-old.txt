@@ -1,0 +1,36 @@
+     N  M           
+     |  A----T---A  
+  /--L----------A|  
+  |       B     >I  
+  |       |     >I  
+  A-----H-^--A  >I  
+             |  >I  
+             |  >I  
+             A--/|  
+                 |  
+                 T  
+                 |  
+                 X  
+                 |  
+                 2  
+END
+| PUD
+- PLR
+> PUDR
+< PUDL
+^ PLRU
+v PLRD
+A XLD
+/ XLU
++ XLR
+L L
+B B
+X V
+T T
+1 1
+2 2
+N N
+M M
+H H
+K K
+I I

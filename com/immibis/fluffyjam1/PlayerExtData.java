@@ -176,11 +176,9 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 
 	public void empty(int i) {
 		for(Guts.Tile t : data.tiles)
-			if(t instanceof Guts.ValveTile) {
-				Reagents r = t.nets[Guts.D_U].contents;
-				if(r.get(Reagent.R_STOOL) > 0 && i == 2) ((Guts.ValveTile)t).open = true;
-				if(r.get(Reagent.R_MWASTE) > 0 && i == 1) ((Guts.ValveTile)t).open = true;
-			}
+			if(t instanceof Guts.ValveTile)
+				if(i == ((Guts.ValveTile)t).id)
+					((Guts.ValveTile)t).open = !((Guts.ValveTile)t).open;
 	}
 
 	
