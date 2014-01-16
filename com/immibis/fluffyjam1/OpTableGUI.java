@@ -123,7 +123,7 @@ public class OpTableGUI extends GuiContainer {
 				if(t instanceof Guts.EmptyTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 12, 204, 12, 12);
 				else if(t instanceof Guts.MouthTile)
-					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 0, 204, 12, 12);
+					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 132, 204, 12, 12);
 				else if(t instanceof Guts.PipeTile) {
 					switch(((Guts.PipeTile)t).getMask()) {
 					case Guts.DM_D | Guts.DM_U: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 12, 192, 12, 12); break;
