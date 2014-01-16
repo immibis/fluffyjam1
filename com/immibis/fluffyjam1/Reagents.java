@@ -168,4 +168,10 @@ public class Reagents implements Serializable {
 		add(idTo, get(idFrom));
 		set(idFrom, 0);
 	}
+
+	public void clear() {
+		total = 0;
+		for(int k = 0; k < Reagent.COUNT; k++)
+			amount[k] = 0;
+	}
 }

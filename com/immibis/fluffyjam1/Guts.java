@@ -580,7 +580,7 @@ public final class Guts implements Serializable {
 	public class LegTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
-		LegTile() {
+		void initNets() {
 			initNet(DM_U);
 		}
 		
@@ -761,6 +761,13 @@ public final class Guts implements Serializable {
 		for(Tile t : tiles)
 			t.initNets();
 		
+		Reagents before = new Reagents();
+		for(PipeNetwork pn : nets)
+			before.add(pn.new_contents);
+		
+		HashSet<PipeNetwork> netSet = new HashSet<PipeNetwork>(Arrays.asList(nets));
+		
+		Reagents after = new Reagents();
 		for(PipeNetwork pn : nets) {
 			Collection<Tile> tiles = splitToTiles.get(pn);
 			if(tiles.size() == 0) continue;
@@ -769,11 +776,16 @@ public final class Guts implements Serializable {
 			
 			for(Tile t : tiles) {
 				PipeNetwork splitPN = t.nets[tileSides.get(pn, t)];
-				splitPN.new_contents = splitR.getFraction(1);
+				if(netSet.contains(splitPN))
+					throw new AssertionError();
 				splitPN.contents = splitR.getFraction(1);
+				splitPN.new_contents = splitR.getFraction(1);
+				after.add(splitR);
 			}
 		}
 		
+		
+		int a=1;
 	}
 	
 	public void buildNetworks() {
@@ -800,8 +812,12 @@ public final class Guts implements Serializable {
 						if(n[k] != null) {
 							PipeNetwork pn = n[k];
 							nets.add(n[k] = pn.getRoot());
-							n[k].contents.add(pn.contents);
-							n[k].new_contents.add(pn.new_contents);
+							if(pn.contents.getTotal() > 0 && pn != n[k]) {
+								n[k].contents.add(pn.contents);
+								n[k].new_contents.add(pn.new_contents);
+								pn.contents.clear();
+								pn.new_contents.clear();
+							}
 							n[k].tiles.add(tiles[x + y*w]);
 							n[k].leak |= pn.leak;
 							// increment n[k].size if this tile-side is actually connected to another tile-side
