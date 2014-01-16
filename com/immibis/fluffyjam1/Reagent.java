@@ -21,7 +21,7 @@ public final class Reagent {
 	
 	static {
 		COLOUR[R_FOOD] = 0xFFAE00;
-		COLOUR[R_BLOOD] = 0x8000FF;
+		COLOUR[R_BLOOD] = 0xFF0000;
 		COLOUR[R_OXYGEN] = 0x00FF00;
 		COLOUR[R_WATER] = 0x0000FF;
 		COLOUR[R_STOOL] = 0x966400;
