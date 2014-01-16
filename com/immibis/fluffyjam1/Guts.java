@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
-import com.immibis.fluffyjam1.Guts.DrawingTile;
-
 public final class Guts implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
@@ -157,6 +155,8 @@ public final class Guts implements Serializable {
 		
 		PipeNetwork[] nets = null;
 		
+		void initNets() {}
+		
 		protected void initNets(int mask) {
 			if(nets == null) nets = new PipeNetwork[4];
 			for(int k = 0; k < 4; k++)
@@ -229,7 +229,7 @@ public final class Guts implements Serializable {
 	public class MouthTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
-		MouthTile() {
+		void initNets() {
 			initNets(DM_R);
 		}
 		
@@ -248,7 +248,7 @@ public final class Guts implements Serializable {
 	public class NoseTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
-		NoseTile() {
+		void initNets() {
 			initNets(DM_R);
 		}
 		
@@ -267,7 +267,7 @@ public final class Guts implements Serializable {
 	public static class LungTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
-		LungTile() {
+		void initNets() {
 			initNets(DM_U | DM_L | DM_R);
 		}
 		
@@ -301,7 +301,7 @@ public final class Guts implements Serializable {
 	public static class HeartTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
-		HeartTile() {
+		void initNets() {
 			initNets(DM_L | DM_R);
 		}
 		@Override
@@ -325,6 +325,9 @@ public final class Guts implements Serializable {
 		
 		KidneyTile(int u, int v) {
 			super(u, v);
+		}
+		
+		void initNets() {
 			initNets(DM_U | DM_D);
 			initNet(DM_L | DM_R);
 		}
@@ -411,10 +414,13 @@ public final class Guts implements Serializable {
 		boolean autoOpen;
 		
 		ValveTile(int id, boolean autoOpen) {
-			initNet(DM_U | DM_L);
-			initNet(DM_D | DM_R);
 			this.id = id;
 			this.autoOpen = autoOpen;
+		}
+		
+		void initNets() {
+			initNet(DM_U | DM_L);
+			initNet(DM_D | DM_R);
 		}
 		
 		boolean open = false;
@@ -449,8 +455,11 @@ public final class Guts implements Serializable {
 		int id;
 		
 		OrificeTile(int id) {
-			initNet(DM_U | DM_D | DM_L | DM_R);
 			this.id = id;
+		}
+		
+		void initNets() {
+			initNet(DM_U | DM_D | DM_L | DM_R);
 		}
 		
 		@Override
@@ -470,7 +479,9 @@ public final class Guts implements Serializable {
 		boolean horiz;
 		IntestineTile(boolean horiz) {
 			this.horiz = horiz;
-			
+		}
+		
+		void initNets() {
 			if(horiz) {
 				initNets(DM_L | DM_R);
 				initNet(DM_U | DM_D);
@@ -527,6 +538,9 @@ public final class Guts implements Serializable {
 		
 		SensorTile(int id) {
 			this.id = id;
+		}
+		
+		void initNets() {
 			initNet(DM_L | DM_R | DM_U | DM_D);
 		}
 		
@@ -574,7 +588,7 @@ public final class Guts implements Serializable {
 	public class BrainTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
-		BrainTile() {
+		void initNets() {
 			initNets(DM_D);
 		}
 		
@@ -616,14 +630,15 @@ public final class Guts implements Serializable {
 	public static class PipeObstacleTile extends ObstacleTile {
 		private static final long serialVersionUID = 1L;
 		
+		private int mask;
 		PipeObstacleTile(int mask, int u, int v) {
 			super(u, v);
+			this.mask = mask;
+		}
+		
+		void initNets() {
 			initNet(mask);
 		}
-	}
-	
-	public static class DrawingTile extends Tile {
-		// TODO
 	}
 	
 	public static class PipeTile extends Tile {
@@ -632,6 +647,9 @@ public final class Guts implements Serializable {
 		private byte mask;
 		PipeTile(int mask) {
 			this.mask = (byte)mask;
+		}
+		
+		void initNets() {
 			initNet(mask);
 		}
 		public int getMask() {
@@ -652,7 +670,7 @@ public final class Guts implements Serializable {
 	public class TankTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
-		public TankTile() {
+		void initNets() {
 			initNet(DM_L | DM_R | DM_U | DM_D);
 		}
 		
@@ -678,6 +696,9 @@ public final class Guts implements Serializable {
 		PipeCrossTile(int mask1, int mask2) {
 			this.mask1 = (byte)mask1;
 			this.mask2 = (byte)mask2;
+		}
+		
+		void initNets() {
 			initNet(mask1);
 			initNet(mask2);
 		}
@@ -718,8 +739,7 @@ public final class Guts implements Serializable {
 	
 	public void buildNetworks() {
 		for(int k = 0; k < tiles.length; k++)
-			if(tiles[k].nets != null)
-				Arrays.fill(tiles[k].nets, null);
+			tiles[k].initNets();
 		
 		for(int y = 0; y < h; y++)
 			for(int x = 0; x < w; x++)
@@ -818,5 +838,58 @@ public final class Guts implements Serializable {
 	public void setTile(int x, int y, Tile tile) {
 		if(validCoords(x, y))
 			tiles[x + y*w] = tile;
+	}
+	
+	
+	
+	
+	
+	
+	
+	private int drawnPipeFixMask(int mask) {
+		if(mask == Guts.DM_U || mask == Guts.DM_D) return Guts.DM_U | Guts.DM_D;
+		if(mask == Guts.DM_L || mask == Guts.DM_R) return Guts.DM_L | Guts.DM_R;
+		if(mask == 0) return 15;
+		return mask;
+	}
+	
+	public void finishDrawingPipes(boolean[][] drawMask, boolean removeMode) {
+		for(int x = 0; x < w; x++)
+		for(int y = 0; y < h; y++) {
+			if(!drawMask[x][y])
+				continue;
+			
+			boolean u = y>0 && drawMask[x][y-1];
+			boolean d = y<h-1 && drawMask[x][y+1];
+			boolean l = x>0 && drawMask[x-1][y];
+			boolean r = x<w-1 && drawMask[x+1][y];
+			Guts.Tile t = getTile(x, y);
+			int drawConnMask = (u ? Guts.DM_U : 0) | (d ? Guts.DM_D : 0) | (l ? Guts.DM_L : 0) | (r ? Guts.DM_R : 0);
+			
+			if(t instanceof Guts.EmptyTile && !removeMode) {
+				setTile(x, y, new Guts.PipeTile(drawnPipeFixMask(drawConnMask)));
+			
+			} else if(t instanceof Guts.PipeTile) {
+				int tm = ((Guts.PipeTile)t).getMask();
+				if(removeMode) {
+					tm &= ~drawConnMask;
+					if(tm != 0)
+						tm = drawnPipeFixMask(tm & ~drawConnMask);
+					if(tm == 0)
+						setTile(x, y, new Guts.EmptyTile());
+					else
+						setTile(x, y, new Guts.PipeTile(tm));
+				
+				} else if(tm == (Guts.DM_U | Guts.DM_D) && !u && !d && l && r)
+					setTile(x, y, new Guts.PipeCrossTile(tm, Guts.DM_L | Guts.DM_R));
+				else if(tm == (Guts.DM_L | Guts.DM_R) && u && d && !l && !r)
+					setTile(x, y, new Guts.PipeCrossTile(tm, Guts.DM_U | Guts.DM_D));
+				else
+					setTile(x, y, new Guts.PipeTile(tm | (u ? Guts.DM_U : 0) | (d ? Guts.DM_D : 0) | (l ? Guts.DM_L : 0) | (r ? Guts.DM_R : 0)));
+			}
+		}
+		
+		buildNetworks();
+		
 	}
 }

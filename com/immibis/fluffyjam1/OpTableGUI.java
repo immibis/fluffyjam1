@@ -204,8 +204,7 @@ public class OpTableGUI extends GuiContainer {
 			return;
 		
 		if((btn == 0 || btn == 1) && drawnPipeLayer != null) {
-			finishDrawingPipes();
-			cont.guts.buildNetworks();
+			cont.guts.finishDrawingPipes(drawnPipeLayer, drawnPipeLayer_removeMode);
 			drawnPipeLayer = null;
 			
 		} else if(Mouse.isButtonDown(0) || Mouse.isButtonDown(1)) {
@@ -220,56 +219,7 @@ public class OpTableGUI extends GuiContainer {
 		}
 	}
 	
-	private boolean checkDrawnPipe(int x, int y) {
-		return cont.guts.validCoords(x, y) && drawnPipeLayer[x][y];
-	}
-	private boolean drawnPipeConnects(int x, int y, int dir) {
-		Guts.Tile t = cont.guts.getTile(x, y);
-		return (t instanceof Guts.DrawingTile || (t instanceof Guts.PipeTile && (((Guts.PipeTile)t).getMask() & dir) != 0));
-	}
-	private int drawnPipeFixMask(int mask) {
-		if(mask == Guts.DM_U || mask == Guts.DM_D)
-			mask = Guts.DM_U | Guts.DM_D;
-		if(mask == Guts.DM_L || mask == Guts.DM_R)
-			mask = Guts.DM_L | Guts.DM_R;
-		if(mask == 0)
-			mask = 15;
-		return mask;
-	}
-	private void finishDrawingPipes() {
-		Guts guts = cont.guts;
-		for(int x = 0; x < guts.w; x++)
-		for(int y = 0; y < guts.h; y++) {
-			boolean u = checkDrawnPipe(x, y-1);
-			boolean d = checkDrawnPipe(x, y+1);
-			boolean l = checkDrawnPipe(x-1, y);
-			boolean r = checkDrawnPipe(x+1, y);
-			Guts.Tile t = guts.getTile(x, y);
-			int drawConnMask = (u ? Guts.DM_U : 0) | (d ? Guts.DM_D : 0) | (l ? Guts.DM_L : 0) | (r ? Guts.DM_R : 0);
-			
-			if(t instanceof Guts.EmptyTile && checkDrawnPipe(x, y) && !drawnPipeLayer_removeMode) {
-				guts.setTile(x, y, new Guts.PipeTile(drawnPipeFixMask(drawConnMask)));
-			
-			} else if(t instanceof Guts.PipeTile) {
-				int tm = ((Guts.PipeTile)t).getMask();
-				if(drawnPipeLayer_removeMode) {
-					tm &= ~drawConnMask;
-					if(tm != 0)
-						tm = drawnPipeFixMask(tm & ~drawConnMask);
-					if(tm == 0)
-						guts.setTile(x, y, new Guts.EmptyTile());
-					else
-						guts.setTile(x, y, new Guts.PipeTile(tm));
-				
-				} else if(tm == (Guts.DM_U | Guts.DM_D) && !u && !d && l && r)
-					guts.setTile(x, y, new Guts.PipeCrossTile(tm, Guts.DM_L | Guts.DM_R));
-				else if(tm == (Guts.DM_L | Guts.DM_R) && u && d && !l && !r)
-					guts.setTile(x, y, new Guts.PipeCrossTile(tm, Guts.DM_U | Guts.DM_D));
-				else
-					guts.setTile(x, y, new Guts.PipeTile(tm | (u ? Guts.DM_U : 0) | (d ? Guts.DM_D : 0) | (l ? Guts.DM_L : 0) | (r ? Guts.DM_R : 0)));
-			}
-		}
-	}
+	
 
 	@Override
 	protected void keyTyped(char par1, int par2) {
