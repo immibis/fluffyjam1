@@ -281,8 +281,6 @@ public class FluffyJam1Mod implements IGuiHandler {
 				else
 					return f_u.getFlowingIcon();
 			}
-			
-			{setQuantaPerBlock(3);}
 		};
 		blockF_d = new BlockFluidClassic(2202, f_d, Material.water);
 		
