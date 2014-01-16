@@ -124,7 +124,7 @@ public class OpTableGUI extends GuiContainer {
 		mousex -= guiLeft;
 		mousey -= guiTop;
 		
-		if(Mouse.isButtonDown(0)) {
+		if(Mouse.isButtonDown(1)) {
 			int hoverx = (mousex - 8) / 12, hovery = (mousey - 6) / 12;
 			
 			if(hoverx >= 0 && hovery >= 0 && hoverx < 20 && hovery < 15) {

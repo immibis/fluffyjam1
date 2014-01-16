@@ -7,8 +7,7 @@ import java.util.EnumSet;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
-import com.jcraft.jorbis.Block;
-
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockFluid;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
@@ -77,12 +76,13 @@ public class FluffyJam1Mod implements IGuiHandler {
 	public static BlockFluidBase blockF_u, blockF_d;
 	public static OneBlock block1;
 	public static Item itemS;
+	public static Block blockSludge;
 	
 	public static final int REAGENT_PER_BLOCK = 200;
 	
 	public static final int GUI_OP_TABLE = 1;
 	
-	public static Fluid f_u, f_d;
+	public static Fluid f_u, f_d, f_sl;
 	
 	public static final boolean SELF_OP_MODE = true; // if true, players operate on themselves, for SSP testing
 	
@@ -240,12 +240,16 @@ public class FluffyJam1Mod implements IGuiHandler {
 		blockOT = new OpTableBlock(2200);
 		block1 = new OneBlock(2203);
 		itemS = new Item(22000).setUnlocalizedName("immibis.fj1.itemS").setMaxStackSize(1).setTextureName("immibis_fluffyjam1:itemS");
+		blockSludge = new SludgeBlock(2204);
 		
 		f_u = new Fluid("FJ1IMBU");
 		f_d = new Fluid("FJ1IMBD");
+		f_sl = new Fluid("FJ1IMBSL");
+		f_sl.setBlockID(blockSludge);
 		
 		if(!FluidRegistry.registerFluid(f_u)) throw new RuntimeException(f_u.getName()+" already registered");
 		if(!FluidRegistry.registerFluid(f_d)) throw new RuntimeException(f_d.getName()+" already registered");
+		if(!FluidRegistry.registerFluid(f_sl)) throw new RuntimeException(f_sl.getName()+" already registered");
 		
 		blockF_u = new BlockFluidClassic(2201, f_u, Material.water) {
 			@Override
@@ -267,6 +271,7 @@ public class FluffyJam1Mod implements IGuiHandler {
 		GameRegistry.registerBlock(blockF_u, "fu");
 		GameRegistry.registerBlock(blockF_d, "fd");
 		GameRegistry.registerBlock(block1, "1");
+		GameRegistry.registerBlock(blockSludge, "s");
 		
 		NetworkRegistry.instance().registerGuiHandler(this, this);
 		NetworkRegistry.instance().registerChannel(new OpTableContainer.PacketHandler(), OpTableContainer.CHANNEL);

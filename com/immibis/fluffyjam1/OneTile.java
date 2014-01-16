@@ -18,10 +18,8 @@ public class OneTile extends TileEntity {
 			return false;
 		if(worldObj.isAirBlock(x, y, z))
 			return true;
-		Block b = Block.blocksList[worldObj.getBlockId(x, y, z)];
-		if((b instanceof BlockFluid) || (b instanceof BlockFluidBase))
-			if(worldObj.getBlockMetadata(x, y, z) != 0)
-				return true;
+		if(worldObj.getBlockId(x, y, z) == FluffyJam1Mod.blockF_u.blockID && worldObj.getBlockMetadata(x, y, z) != 0)
+			return true;
 		return false;
 	}
 	
@@ -56,7 +54,7 @@ public class OneTile extends TileEntity {
 		y = yCoord-1;
 		z = zCoord;
 		
-		for(int k = 0; k < 100 && randomStep(); k++)
+		for(int k = 0; k < 20 && randomStep(); k++)
 			;
 		
 		if(!isValid(x, y, z))
@@ -78,6 +76,7 @@ public class OneTile extends TileEntity {
 				Block b = getBlockFor(k);
 				if(b != null)
 					worldObj.setBlock(x, y, z, b.blockID);
+				System.out.println(x+" "+y+" "+z);
 				my_buffer.remove(k, FluffyJam1Mod.REAGENT_PER_BLOCK);
 				return;
 			}
@@ -104,8 +103,8 @@ public class OneTile extends TileEntity {
 		case Reagent.R_BLOOD: return null;
 		case Reagent.R_MWASTE: return FluffyJam1Mod.blockF_u;
 		case Reagent.R_OXYGEN: return null;
-		case Reagent.R_STOOL: return Block.dirt;
-		case Reagent.R_WATER: return Block.waterMoving;
+		case Reagent.R_STOOL: return FluffyJam1Mod.blockSludge;
+		//case Reagent.R_WATER: return Block.waterMoving;
 		}
 		System.err.println("getBlockFor unexpected reagent "+id);
 		return null;

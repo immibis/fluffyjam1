@@ -352,7 +352,8 @@ public final class Guts implements Serializable {
 				Reagents remove = pn.contents.getVolume(to_remove);
 				pn.new_contents.remove(remove);
 				remove.set(Reagent.R_BLOOD, 0);
-				remove.pourInto(nets[D_D].new_contents);
+				remove.set(Reagent.R_OXYGEN, 0);
+				remove.pourInto(nets[D_R].new_contents);
 				pn.new_contents.add(remove);
 			}
 		}
@@ -370,7 +371,7 @@ public final class Guts implements Serializable {
 			final float WATER_TO_MWASTE_RATIO = 0.5f;
 			final float EXCESS_WATER_REMOVE_RATE = 0.3f;
 			final float MWASTE_REMOVE_RATE = 0.8f;
-			final float STOOL_TO_MWASTE_RATE = 80f;
+			final float STOOL_TO_MWASTE_RATE = 10f;
 			
 			float s = Math.min(transfer.get(Reagent.R_STOOL), transfer.getDissolveSpace(Reagent.R_MWASTE) / STOOL_TO_MWASTE_RATE);
 			transfer.remove(Reagent.R_STOOL, s);
@@ -483,12 +484,12 @@ public final class Guts implements Serializable {
 			PipeNetwork net_out = nets[horiz ? D_R : D_D];
 			PipeNetwork net_blood = nets[horiz ? D_U : D_L];
 			
-			/*if(net_in.contents.getFractionFull() > 0.5f) {
-				net_in.new_contents.remove(Reagent.R_STOOL, net_out.new_contents.addRespectingCapacity(Reagent.R_STOOL, Math.min(net_in.new_contents.get(Reagent.R_STOOL), net_in.contents.get(Reagent.R_STOOL))));
-			}*/
+			//if(net_in.contents.getFractionFull() > 0.5f) {
+			//	net_in.new_contents.remove(Reagent.R_STOOL, net_out.new_contents.addRespectingCapacity(Reagent.R_STOOL, 0.5f * (net_in.contents.getFractionFull() - 0.5f) * Math.min(net_in.new_contents.get(Reagent.R_STOOL), net_in.contents.get(Reagent.R_STOOL))));
+			//}
 				
 			float flow = calcFlow(net_in, net_out);
-			flow = Math.min(flow, 1);
+			//flow = Math.min(flow, 1);
 			flow = Math.max(flow, 0.1f);
 			
 			Reagents blood = net_blood.contents, new_blood = net_blood.new_contents;
