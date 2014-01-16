@@ -430,6 +430,11 @@ public final class Guts implements Serializable {
 			initNet(DM_D);
 		}
 		
+		@Override
+		public List<String> describe() {
+			return Arrays.asList("Valve", "Auto-open: "+(autoOpen?"Yes":"No"), "Currently "+(open?"open":"closed"));
+		}
+		
 		boolean open = false;
 		
 		@Override
@@ -634,13 +639,18 @@ public final class Guts implements Serializable {
 		}
 	}
 	
-	public static class PipeObstacleTile extends ObstacleTile {
+	public static class PipeObstacleTile extends ObstacleTile implements IPipeTile {
 		private static final long serialVersionUID = 1L;
 		
-		private int mask;
+		@Override
+		public int getMask() {
+			return mask;
+		}
+		
+		private byte mask;
 		PipeObstacleTile(int mask, int u, int v) {
 			super(u, v);
-			this.mask = mask;
+			this.mask = (byte)mask;
 		}
 		
 		void initNets() {
@@ -648,7 +658,11 @@ public final class Guts implements Serializable {
 		}
 	}
 	
-	public static class PipeTile extends Tile {
+	public static interface IPipeTile {
+		public int getMask();
+	}
+	
+	public static class PipeTile extends Tile implements IPipeTile {
 		private static final long serialVersionUID = 1L;
 		
 		private byte mask;
