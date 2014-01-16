@@ -717,6 +717,10 @@ public final class Guts implements Serializable {
 	}
 	
 	public void buildNetworks() {
+		for(int k = 0; k < tiles.length; k++)
+			if(tiles[k].nets != null)
+				Arrays.fill(tiles[k].nets, null);
+		
 		for(int y = 0; y < h; y++)
 			for(int x = 0; x < w; x++)
 				if(tiles[x + y*w].nets != null) {

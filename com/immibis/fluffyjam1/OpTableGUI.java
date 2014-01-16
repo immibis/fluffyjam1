@@ -18,6 +18,7 @@ public class OpTableGUI extends GuiContainer {
 	
 	private int scrollx, scrolly;
 	private boolean[][] drawnPipeLayer;
+	private boolean drawnPipeLayer_removeMode;
 	
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float f, int mousex, int mousey) {
@@ -75,7 +76,7 @@ public class OpTableGUI extends GuiContainer {
 				else if(t instanceof Guts.SensorTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 156, 228, 12, 12);
 				if(t != null && drawnPipeLayer != null && drawnPipeLayer[x+scrollx][y+scrolly])
-					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 132, 240, 12, 12);
+					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, drawnPipeLayer_removeMode ? 144 : 132, 240, 12, 12);
 			}
 		
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -202,16 +203,19 @@ public class OpTableGUI extends GuiContainer {
 		if(!cont.guts.validCoords(tx, ty))
 			return;
 		
-		if(btn == 0 && drawnPipeLayer != null) {
+		if((btn == 0 || btn == 1) && drawnPipeLayer != null) {
 			finishDrawingPipes();
 			cont.guts.buildNetworks();
 			drawnPipeLayer = null;
-		} else if(Mouse.isButtonDown(0)) {
+			
+		} else if(Mouse.isButtonDown(0) || Mouse.isButtonDown(1)) {
 			if(drawnPipeLayer == null)
 				drawnPipeLayer = new boolean[cont.guts.w][cont.guts.h];
 			
-			Guts.Tile oldTile = cont.guts.getTile(tx, ty);
-			if(oldTile instanceof Guts.PipeTile || oldTile instanceof Guts.EmptyTile)
+			drawnPipeLayer_removeMode = Mouse.isButtonDown(1);
+			
+			//Guts.Tile oldTile = cont.guts.getTile(tx, ty);
+			//if(oldTile instanceof Guts.PipeTile || oldTile instanceof Guts.EmptyTile)
 				drawnPipeLayer[tx][ty] = true;
 		}
 	}
@@ -223,6 +227,15 @@ public class OpTableGUI extends GuiContainer {
 		Guts.Tile t = cont.guts.getTile(x, y);
 		return (t instanceof Guts.DrawingTile || (t instanceof Guts.PipeTile && (((Guts.PipeTile)t).getMask() & dir) != 0));
 	}
+	private int drawnPipeFixMask(int mask) {
+		if(mask == Guts.DM_U || mask == Guts.DM_D)
+			mask = Guts.DM_U | Guts.DM_D;
+		if(mask == Guts.DM_L || mask == Guts.DM_R)
+			mask = Guts.DM_L | Guts.DM_R;
+		if(mask == 0)
+			mask = 15;
+		return mask;
+	}
 	private void finishDrawingPipes() {
 		Guts guts = cont.guts;
 		for(int x = 0; x < guts.w; x++)
@@ -232,20 +245,23 @@ public class OpTableGUI extends GuiContainer {
 			boolean l = checkDrawnPipe(x-1, y);
 			boolean r = checkDrawnPipe(x+1, y);
 			Guts.Tile t = guts.getTile(x, y);
+			int drawConnMask = (u ? Guts.DM_U : 0) | (d ? Guts.DM_D : 0) | (l ? Guts.DM_L : 0) | (r ? Guts.DM_R : 0);
 			
-			if(t instanceof Guts.EmptyTile && checkDrawnPipe(x, y)) {
-				int mask = (u ? Guts.DM_U : 0) | (d ? Guts.DM_D : 0) | (l ? Guts.DM_L : 0) | (r ? Guts.DM_R : 0);
-				if(mask == Guts.DM_U || mask == Guts.DM_D)
-					mask = Guts.DM_U | Guts.DM_D;
-				if(mask == Guts.DM_L || mask == Guts.DM_R)
-					mask = Guts.DM_L | Guts.DM_R;
-				if(mask == 0)
-					mask = 15;
-				guts.setTile(x, y, new Guts.PipeTile(mask));
+			if(t instanceof Guts.EmptyTile && checkDrawnPipe(x, y) && !drawnPipeLayer_removeMode) {
+				guts.setTile(x, y, new Guts.PipeTile(drawnPipeFixMask(drawConnMask)));
 			
 			} else if(t instanceof Guts.PipeTile) {
 				int tm = ((Guts.PipeTile)t).getMask();
-				if(tm == (Guts.DM_U | Guts.DM_D) && !u && !d && l && r)
+				if(drawnPipeLayer_removeMode) {
+					tm &= ~drawConnMask;
+					if(tm != 0)
+						tm = drawnPipeFixMask(tm & ~drawConnMask);
+					if(tm == 0)
+						guts.setTile(x, y, new Guts.EmptyTile());
+					else
+						guts.setTile(x, y, new Guts.PipeTile(tm));
+				
+				} else if(tm == (Guts.DM_U | Guts.DM_D) && !u && !d && l && r)
 					guts.setTile(x, y, new Guts.PipeCrossTile(tm, Guts.DM_L | Guts.DM_R));
 				else if(tm == (Guts.DM_L | Guts.DM_R) && u && d && !l && !r)
 					guts.setTile(x, y, new Guts.PipeCrossTile(tm, Guts.DM_U | Guts.DM_D));
