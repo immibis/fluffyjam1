@@ -55,9 +55,9 @@ public class OpTableGUI extends GuiContainer {
 					}
 				} else if(t instanceof Guts.PipeCrossTile) {
 					switch(((Guts.PipeCrossTile)t).getMask1()) {
-					case Guts.DM_L | Guts.DM_D: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 72, 192, 12, 12); break;
-					case Guts.DM_L | Guts.DM_U: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 60, 192, 12, 12); break;
-					case Guts.DM_L | Guts.DM_R: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 84, 192, 12, 12); break;
+					case Guts.DM_L | Guts.DM_D: case Guts.DM_R | Guts.DM_U: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 72, 192, 12, 12); break;
+					case Guts.DM_L | Guts.DM_U: case Guts.DM_R | Guts.DM_D: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 60, 192, 12, 12); break;
+					case Guts.DM_L | Guts.DM_R: case Guts.DM_U | Guts.DM_D: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 84, 192, 12, 12); break;
 					}
 				} else if(t instanceof Guts.NoseTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 156, 216, 12, 12);
@@ -158,7 +158,8 @@ public class OpTableGUI extends GuiContainer {
 		mousex -= guiLeft;
 		mousey -= guiTop;
 		
-		if(Mouse.isButtonDown(1)) {
+		//if(Mouse.isButtonDown(1))
+		{
 			int hoverx = (mousex - 8) / 12, hovery = (mousey - 6) / 12;
 			
 			if(hoverx >= 0 && hovery >= 0 && hoverx < 20 && hovery < 15) {

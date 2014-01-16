@@ -523,7 +523,7 @@ public final class Guts implements Serializable {
 			
 			float avail_water = transfer.get(Reagent.R_WATER);
 			if(avail_water > 0)
-				transfer.remove(Reagent.R_WATER, new_blood.addRespectingCapacity(Reagent.R_WATER, avail_water * 0.8f));
+				transfer.remove(Reagent.R_WATER, new_blood.addRespectingCapacity(Reagent.R_WATER, avail_water * 0.5f));
 			
 			
 			
@@ -880,10 +880,8 @@ public final class Guts implements Serializable {
 					else
 						setTile(x, y, new Guts.PipeTile(tm));
 				
-				} else if(tm == (Guts.DM_U | Guts.DM_D) && !u && !d && l && r)
-					setTile(x, y, new Guts.PipeCrossTile(tm, Guts.DM_L | Guts.DM_R));
-				else if(tm == (Guts.DM_L | Guts.DM_R) && u && d && !l && !r)
-					setTile(x, y, new Guts.PipeCrossTile(tm, Guts.DM_U | Guts.DM_D));
+				} else if(drawConnMask == (15 ^ tm) && Integer.bitCount(tm) == 2)
+					setTile(x, y, new Guts.PipeCrossTile(tm, 15 ^ tm));
 				else
 					setTile(x, y, new Guts.PipeTile(tm | (u ? Guts.DM_U : 0) | (d ? Guts.DM_D : 0) | (l ? Guts.DM_L : 0) | (r ? Guts.DM_R : 0)));
 			
