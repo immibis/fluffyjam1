@@ -6,12 +6,19 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
+
+import com.google.common.collect.ArrayTable;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.Table;
 
 public final class Guts implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -710,7 +717,8 @@ public final class Guts implements Serializable {
 	public static class PipeNetwork implements Serializable {
 		private static final long serialVersionUID = 1L;
 		
-		Reagents contents, new_contents;
+		Reagents contents = new Reagents();
+		Reagents new_contents = new Reagents();
 		int size; // number of tile-sides in this network
 		boolean leak;
 		Set<Tile> tiles = new HashSet<Tile>();
@@ -737,9 +745,41 @@ public final class Guts implements Serializable {
 		return tiles[x + y*w];
 	}
 	
+	private void unbuildNetworks() {
+		Multimap<PipeNetwork, Tile> splitToTiles = HashMultimap.create();
+		Table<PipeNetwork, Tile, Integer> tileSides = ArrayTable.create(Arrays.asList(nets), new HashSet<Tile>(Arrays.asList(tiles)));
+		for(Tile t : tiles)
+			if(t.nets != null && !(t instanceof PipeTile) && !(t instanceof PipeCrossTile) && !(t instanceof SensorTile) && !(t instanceof ValveTile))
+				for(int k = 0; k < 4; k++) {
+					PipeNetwork pn = t.nets[k];
+					if(pn != null) {
+						splitToTiles.put(pn, t);
+						tileSides.put(pn, t, k);
+					}
+				}
+		
+		for(Tile t : tiles)
+			t.initNets();
+		
+		for(PipeNetwork pn : nets) {
+			Collection<Tile> tiles = splitToTiles.get(pn);
+			if(tiles.size() == 0) continue;
+			
+			Reagents splitR = pn.new_contents.getFraction(1.0f / tiles.size());
+			
+			for(Tile t : tiles) {
+				PipeNetwork splitPN = t.nets[tileSides.get(pn, t)];
+				splitPN.new_contents = splitR.getFraction(1);
+				splitPN.contents = splitR.getFraction(1);
+			}
+		}
+		
+	}
+	
 	public void buildNetworks() {
 		for(int k = 0; k < tiles.length; k++)
-			tiles[k].initNets();
+			if(tiles[k].nets == null)
+				tiles[k].initNets();
 		
 		for(int y = 0; y < h; y++)
 			for(int x = 0; x < w; x++)
@@ -760,6 +800,8 @@ public final class Guts implements Serializable {
 						if(n[k] != null) {
 							PipeNetwork pn = n[k];
 							nets.add(n[k] = pn.getRoot());
+							n[k].contents.add(pn.contents);
+							n[k].new_contents.add(pn.new_contents);
 							n[k].tiles.add(tiles[x + y*w]);
 							n[k].leak |= pn.leak;
 							// increment n[k].size if this tile-side is actually connected to another tile-side
@@ -776,8 +818,6 @@ public final class Guts implements Serializable {
 		
 		for(PipeNetwork pn : nets) {
 			if(pn.size == 0) pn.size = 1;
-			pn.contents = new Reagents();
-			pn.new_contents = new Reagents();
 			pn.contents.capacity = 10 * pn.tiles.size();
 			
 			for(Tile t : pn.tiles)
@@ -854,6 +894,8 @@ public final class Guts implements Serializable {
 	}
 	
 	public void finishDrawingPipes(boolean[][] drawMask, boolean removeMode) {
+		unbuildNetworks();
+		
 		for(int x = 0; x < w; x++)
 		for(int y = 0; y < h; y++) {
 			if(!drawMask[x][y])
