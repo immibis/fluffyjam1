@@ -2,10 +2,13 @@ package com.immibis.fluffyjam1;
 
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
 import cpw.mods.fml.common.network.IPacketHandler;
 import cpw.mods.fml.common.network.PacketDispatcher;
 import cpw.mods.fml.common.network.Player;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.Container;
@@ -27,6 +30,13 @@ public class OpTableContainer extends Container {
 		guts.tick();
 	}
 	
+	static class DrawData implements Serializable {
+		private static final long serialVersionUID = 1;
+		
+		boolean removeMode;
+		boolean[][] map;
+	}
+	
 	public static final String CHANNEL = "FJ1IMBOTC";
 	
 	static class PacketHandler implements IPacketHandler {
@@ -39,21 +49,38 @@ public class OpTableContainer extends Container {
 		}
 	}
 	
+	public void sendToPlayer(Object o, Player p) {
+		Packet250CustomPayload packet = new Packet250CustomPayload();
+		packet.channel = CHANNEL;
+		packet.data = IOUtils.toBytes(o);
+		packet.length = packet.data.length;
+		PacketDispatcher.sendPacketToPlayer(packet, p);
+	}
+	
+	@SideOnly(Side.CLIENT)
+	public void sendToServer(Object o) {
+		Packet250CustomPayload packet = new Packet250CustomPayload();
+		packet.channel = CHANNEL;
+		packet.data = IOUtils.toBytes(o);
+		packet.length = packet.data.length;
+		PacketDispatcher.sendPacketToServer(packet);
+	}
+	
 	@Override
 	public void addCraftingToCrafters(ICrafting par1iCrafting) {
 		super.addCraftingToCrafters(par1iCrafting);
 		if(par1iCrafting instanceof EntityPlayerMP) {
-			Packet250CustomPayload packet = new Packet250CustomPayload();
-			packet.channel = CHANNEL;
-			packet.data = IOUtils.toBytes(PlayerExtData.get((EntityPlayerMP)operee).data);
-			packet.length = packet.data.length;
-			PacketDispatcher.sendPacketToPlayer(packet, (Player)par1iCrafting);
+			sendToPlayer(PlayerExtData.get((EntityPlayerMP)operee).data, (Player)par1iCrafting);
 		}
 	}
 	
 	public void receiveObject(Object o) {
 		if(o instanceof Guts)
 			guts = (Guts)o;
+		else if(o instanceof DrawData) {
+			DrawData dd = (DrawData)o;
+			PlayerExtData.get((EntityPlayerMP)operee).data.finishDrawingPipes(dd.map, dd.removeMode);
+		}
 	}
 
 	public OpTableContainer(EntityPlayer operator, World world, int x, int y, int z) {

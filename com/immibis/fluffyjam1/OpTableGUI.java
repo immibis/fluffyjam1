@@ -204,6 +204,12 @@ public class OpTableGUI extends GuiContainer {
 			return;
 		
 		if((btn == 0 || btn == 1) && drawnPipeLayer != null) {
+			
+			OpTableContainer.DrawData dd = new OpTableContainer.DrawData();
+			dd.removeMode = drawnPipeLayer_removeMode;
+			dd.map = drawnPipeLayer;
+			cont.sendToServer(dd);
+			
 			cont.guts.finishDrawingPipes(drawnPipeLayer, drawnPipeLayer_removeMode);
 			drawnPipeLayer = null;
 			

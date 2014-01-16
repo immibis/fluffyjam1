@@ -1,5 +1,6 @@
 package com.immibis.fluffyjam1;
 
+import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.EnumSet;
@@ -16,6 +17,7 @@ import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.ImmibisFJ1_ProtectedAccessProxy;
+import net.minecraft.inventory.Container;
 import net.minecraft.item.Item;
 import net.minecraft.network.INetworkManager;
 import net.minecraft.network.NetLoginHandler;
@@ -24,6 +26,7 @@ import net.minecraft.network.packet.NetHandler;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.Packet131MapData;
 import net.minecraft.network.packet.Packet1Login;
+import net.minecraft.network.packet.Packet250CustomPayload;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.EnumMovingObjectType;
@@ -58,6 +61,7 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.network.FMLNetworkHandler;
 import cpw.mods.fml.common.network.IConnectionHandler;
 import cpw.mods.fml.common.network.IGuiHandler;
+import cpw.mods.fml.common.network.IPacketHandler;
 import cpw.mods.fml.common.network.ITinyPacketHandler;
 import cpw.mods.fml.common.network.NetworkMod;
 import cpw.mods.fml.common.network.NetworkRegistry;
@@ -70,7 +74,9 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 @Mod(modid="immibis_fj1", name="Immibis Fluffy Jam 1 Untitled Mod", version="1.0")
-@NetworkMod(clientSideRequired=true, serverSideRequired=false, tinyPacketHandler=FluffyJam1Mod.TinyPacketHandler.class)
+@NetworkMod(clientSideRequired=true, serverSideRequired=false, tinyPacketHandler=FluffyJam1Mod.TinyPacketHandler.class,
+	serverPacketHandlerSpec=@NetworkMod.SidedPacketHandler(channels={"FJ1IMB"}, packetHandler=FluffyJam1Mod.ServerPacketHandler.class)
+)
 public class FluffyJam1Mod implements IGuiHandler {
 	public static OpTableBlock blockOT;
 	public static BlockFluidBase blockF_u, blockF_d;
@@ -116,6 +122,21 @@ public class FluffyJam1Mod implements IGuiHandler {
 		public static Packet getActionPacket(int a) {
 			return PacketDispatcher.getTinyPacket(INSTANCE, (short)a, new byte[0]);
 		}
+	}
+	
+	public static class ServerPacketHandler implements IPacketHandler {
+
+		@Override
+		public void onPacketData(INetworkManager manager, Packet250CustomPayload packet, Player player) {
+			if(packet.data[0] == 0 || packet.data[0] == 1) {
+				/*ByteArrayInputStream is = new ByteArrayInputStream(packet.data);
+				is.read();
+				Container c = ((EntityPlayer)player).openContainer;
+				if(c instanceof OpTableContainer)
+					((OpTableContainer)c).receivePacket(c);*/
+			}
+		}
+		
 	}
 	
 	@ForgeSubscribe(priority = EventPriority.LOW)
