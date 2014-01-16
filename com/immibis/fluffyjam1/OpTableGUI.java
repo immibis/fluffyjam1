@@ -109,6 +109,8 @@ public class OpTableGUI extends GuiContainer {
 					drawReagents(t.nets[Guts.D_D].new_contents, px+7, py+10, 2, 1);
 				} else if(t instanceof Guts.KidneyTile)
 					drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 12, 6);
+				else if(t instanceof Guts.MouthTile)
+					drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 12, 6);
 			}
 		
 		GL11.glEnd();
