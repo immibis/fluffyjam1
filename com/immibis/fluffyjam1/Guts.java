@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
+import com.immibis.fluffyjam1.Guts.DrawingTile;
+
 public final class Guts implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
@@ -620,6 +622,10 @@ public final class Guts implements Serializable {
 		}
 	}
 	
+	public static class DrawingTile extends Tile {
+		// TODO
+	}
+	
 	public static class PipeTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
@@ -710,7 +716,7 @@ public final class Guts implements Serializable {
 		return tiles[x + y*w];
 	}
 	
-	private void buildNetworks() {
+	public void buildNetworks() {
 		for(int y = 0; y < h; y++)
 			for(int x = 0; x < w; x++)
 				if(tiles[x + y*w].nets != null) {
@@ -803,5 +809,10 @@ public final class Guts implements Serializable {
 			}*/
 			n.new_contents.copyTo(n.contents);
 		}
+	}
+
+	public void setTile(int x, int y, Tile tile) {
+		if(validCoords(x, y))
+			tiles[x + y*w] = tile;
 	}
 }

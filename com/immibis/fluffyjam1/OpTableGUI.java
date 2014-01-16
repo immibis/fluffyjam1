@@ -7,6 +7,8 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
+import com.immibis.fluffyjam1.Guts.PipeTile;
+
 import net.minecraft.client.gui.GuiWinGame;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.util.ResourceLocation;
@@ -15,6 +17,7 @@ public class OpTableGUI extends GuiContainer {
 	private ResourceLocation BG_TEX = new ResourceLocation("immibis_fluffyjam1", "textures/gui/optable.png");
 	
 	private int scrollx, scrolly;
+	private boolean[][] drawnPipeLayer;
 	
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float f, int mousex, int mousey) {
@@ -25,6 +28,8 @@ public class OpTableGUI extends GuiContainer {
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
 		Guts guts = cont.guts;
+		
+		GL11.glEnable(GL11.GL_BLEND);
 		
 		for(int y = 0; y < 15; y++)
 			for(int x = 0; x < 20; x++) {
@@ -37,10 +42,15 @@ public class OpTableGUI extends GuiContainer {
 					switch(((Guts.PipeTile)t).getMask()) {
 					case Guts.DM_D | Guts.DM_U: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 12, 192, 12, 12); break;
 					case Guts.DM_L | Guts.DM_R: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 0, 192, 12, 12); break;
+					case Guts.DM_D | Guts.DM_R: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 24, 192, 12, 12); break;
+					case Guts.DM_D | Guts.DM_L: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 48, 192, 12, 12); break;
+					case Guts.DM_U | Guts.DM_R: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 24, 216, 12, 12); break;
+					case Guts.DM_U | Guts.DM_L: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 48, 216, 12, 12); break;
 					case Guts.DM_U | Guts.DM_D | Guts.DM_R: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 24, 204, 12, 12); break;
 					case Guts.DM_U | Guts.DM_D | Guts.DM_L: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 48, 204, 12, 12); break;
 					case Guts.DM_U | Guts.DM_L | Guts.DM_R: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 36, 216, 12, 12); break;
 					case Guts.DM_D | Guts.DM_L | Guts.DM_R: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 36, 192, 12, 12); break;
+					case Guts.DM_U | Guts.DM_D | Guts.DM_R | Guts.DM_L: drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 36, 204, 12, 12); break;
 					}
 				} else if(t instanceof Guts.PipeCrossTile) {
 					switch(((Guts.PipeCrossTile)t).getMask1()) {
@@ -64,9 +74,12 @@ public class OpTableGUI extends GuiContainer {
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, ((Guts.ObstacleTile)t).u, ((Guts.ObstacleTile)t).v, 12, 12);
 				else if(t instanceof Guts.SensorTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 156, 228, 12, 12);
+				if(t != null && drawnPipeLayer != null && drawnPipeLayer[x+scrollx][y+scrolly])
+					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 132, 240, 12, 12);
 			}
 		
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
+		GL11.glDisable(GL11.GL_BLEND);
 		GL11.glBegin(GL11.GL_QUADS);
 		
 		for(int y = 0; y < 15; y++)
@@ -92,6 +105,26 @@ public class OpTableGUI extends GuiContainer {
 					case Guts.DM_L | Guts.DM_R | Guts.DM_D:
 						drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 12, 6);
 						drawReagents(t.nets[Guts.D_L].new_contents, px+3, py+9, 6, 3);
+						break;
+					case Guts.DM_R | Guts.DM_D:
+						drawReagents(t.nets[Guts.D_R].new_contents, px+9, py+3, 3, 6);
+						drawReagents(t.nets[Guts.D_R].new_contents, px+3, py+3, 6, 9);
+						break;
+					case Guts.DM_R | Guts.DM_U:
+						drawReagents(t.nets[Guts.D_R].new_contents, px+9, py+3, 3, 6);
+						drawReagents(t.nets[Guts.D_R].new_contents, px+3, py, 6, 9);
+						break;
+					case Guts.DM_L | Guts.DM_D:
+						drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 3, 6);
+						drawReagents(t.nets[Guts.D_L].new_contents, px+3, py+3, 6, 9);
+						break;
+					case Guts.DM_L | Guts.DM_U:
+						drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 3, 6);
+						drawReagents(t.nets[Guts.D_L].new_contents, px+3, py, 6, 9);
+						break;
+					case Guts.DM_L | Guts.DM_U | Guts.DM_R | Guts.DM_D:
+						drawReagents(t.nets[Guts.D_L].new_contents, px+3, py, 6, 12);
+						drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 12, 6);
 						break;
 					}
 				} else if(t instanceof Guts.PipeCrossTile) {
@@ -137,6 +170,91 @@ public class OpTableGUI extends GuiContainer {
 		}
 	}
 	
+	private boolean validOnScreenTileCoords(int x, int y) {
+		return x >= 0 && y >= 0 && x < 20 && y < 15;
+	}
+	
+	@Override
+	protected void mouseClicked(int x, int y, int btn) {
+		//super.mouseClicked(x, y, btn);
+		
+		
+	}
+	
+	@Override
+	protected void mouseClickMove(int x, int y, int btn, long par4) {
+		//super.mouseClickMove(x, y, btn, par4);
+		mouseMovedOrUp(x, y, -1);
+	}
+	
+	@Override
+	protected void mouseMovedOrUp(int x, int y, int btn) {
+		//super.mouseMovedOrUp(x, y, btn);
+		
+		x -= guiLeft;
+		y -= guiTop;
+		
+		int tx = (x - 8) / 12, ty = (y - 6) / 12;
+		if(!validOnScreenTileCoords(tx, ty))
+			return;
+		
+		tx += scrollx; ty += scrolly;
+		if(!cont.guts.validCoords(tx, ty))
+			return;
+		
+		if(btn == 0 && drawnPipeLayer != null) {
+			finishDrawingPipes();
+			cont.guts.buildNetworks();
+			drawnPipeLayer = null;
+		} else if(Mouse.isButtonDown(0)) {
+			if(drawnPipeLayer == null)
+				drawnPipeLayer = new boolean[cont.guts.w][cont.guts.h];
+			
+			Guts.Tile oldTile = cont.guts.getTile(tx, ty);
+			if(oldTile instanceof Guts.PipeTile || oldTile instanceof Guts.EmptyTile)
+				drawnPipeLayer[tx][ty] = true;
+		}
+	}
+	
+	private boolean checkDrawnPipe(int x, int y) {
+		return cont.guts.validCoords(x, y) && drawnPipeLayer[x][y];
+	}
+	private boolean drawnPipeConnects(int x, int y, int dir) {
+		Guts.Tile t = cont.guts.getTile(x, y);
+		return (t instanceof Guts.DrawingTile || (t instanceof Guts.PipeTile && (((Guts.PipeTile)t).getMask() & dir) != 0));
+	}
+	private void finishDrawingPipes() {
+		Guts guts = cont.guts;
+		for(int x = 0; x < guts.w; x++)
+		for(int y = 0; y < guts.h; y++) {
+			boolean u = checkDrawnPipe(x, y-1);
+			boolean d = checkDrawnPipe(x, y+1);
+			boolean l = checkDrawnPipe(x-1, y);
+			boolean r = checkDrawnPipe(x+1, y);
+			Guts.Tile t = guts.getTile(x, y);
+			
+			if(t instanceof Guts.EmptyTile && checkDrawnPipe(x, y)) {
+				int mask = (u ? Guts.DM_U : 0) | (d ? Guts.DM_D : 0) | (l ? Guts.DM_L : 0) | (r ? Guts.DM_R : 0);
+				if(mask == Guts.DM_U || mask == Guts.DM_D)
+					mask = Guts.DM_U | Guts.DM_D;
+				if(mask == Guts.DM_L || mask == Guts.DM_R)
+					mask = Guts.DM_L | Guts.DM_R;
+				if(mask == 0)
+					mask = 15;
+				guts.setTile(x, y, new Guts.PipeTile(mask));
+			
+			} else if(t instanceof Guts.PipeTile) {
+				int tm = ((Guts.PipeTile)t).getMask();
+				if(tm == (Guts.DM_U | Guts.DM_D) && !u && !d && l && r)
+					guts.setTile(x, y, new Guts.PipeCrossTile(tm, Guts.DM_L | Guts.DM_R));
+				else if(tm == (Guts.DM_L | Guts.DM_R) && u && d && !l && !r)
+					guts.setTile(x, y, new Guts.PipeCrossTile(tm, Guts.DM_U | Guts.DM_D));
+				else
+					guts.setTile(x, y, new Guts.PipeTile(tm | (u ? Guts.DM_U : 0) | (d ? Guts.DM_D : 0) | (l ? Guts.DM_L : 0) | (r ? Guts.DM_R : 0)));
+			}
+		}
+	}
+
 	@Override
 	protected void keyTyped(char par1, int par2) {
 		switch(par2) {
