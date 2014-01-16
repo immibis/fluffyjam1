@@ -426,8 +426,8 @@ public final class Guts implements Serializable {
 		}
 		
 		void initNets() {
-			initNet(DM_U | DM_L);
-			initNet(DM_D | DM_R);
+			initNet(DM_U);
+			initNet(DM_D);
 		}
 		
 		boolean open = false;

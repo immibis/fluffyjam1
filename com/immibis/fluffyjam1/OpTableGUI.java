@@ -75,6 +75,8 @@ public class OpTableGUI extends GuiContainer {
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, ((Guts.ObstacleTile)t).u, ((Guts.ObstacleTile)t).v, 12, 12);
 				else if(t instanceof Guts.SensorTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 156, 228, 12, 12);
+				else if(t instanceof Guts.ValveTile)
+					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, ((Guts.ValveTile)t).open ? 168 : 156, 240, 12, 12);
 				if(t != null && drawnPipeLayer != null && drawnPipeLayer[x+scrollx][y+scrolly])
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, drawnPipeLayer_removeMode ? 144 : 132, 240, 12, 12);
 			}
@@ -150,6 +152,14 @@ public class OpTableGUI extends GuiContainer {
 					}
 				} else if(t instanceof Guts.TankTile)
 					drawReagents(t.nets[Guts.D_U].new_contents, px+1, py+1, 10, 10);
+				else if(t instanceof Guts.ValveTile) {
+					drawReagents(t.nets[Guts.D_U].new_contents, px+3, py, 6, 1);
+					drawReagents(t.nets[Guts.D_U].new_contents, px+3, py+1, 2, 1);
+					drawReagents(t.nets[Guts.D_U].new_contents, px+7, py+1, 2, 1);
+					drawReagents(t.nets[Guts.D_D].new_contents, px+3, py+11, 6, 1);
+					drawReagents(t.nets[Guts.D_D].new_contents, px+3, py+10, 2, 1);
+					drawReagents(t.nets[Guts.D_D].new_contents, px+7, py+10, 2, 1);
+				}
 			}
 		
 		GL11.glEnd();
