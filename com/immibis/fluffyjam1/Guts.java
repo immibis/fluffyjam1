@@ -886,6 +886,17 @@ public final class Guts implements Serializable {
 					setTile(x, y, new Guts.PipeCrossTile(tm, Guts.DM_U | Guts.DM_D));
 				else
 					setTile(x, y, new Guts.PipeTile(tm | (u ? Guts.DM_U : 0) | (d ? Guts.DM_D : 0) | (l ? Guts.DM_L : 0) | (r ? Guts.DM_R : 0)));
+			
+			} else if(t instanceof PipeCrossTile && removeMode) {
+				int m1 = ((PipeCrossTile)t).getMask1();
+				int m2 = 15 ^ m1;
+				if((drawConnMask & m1) == m1)
+					if((drawConnMask & m2) == m2)
+						setTile(x, y, EmptyTile.instance);
+					else
+						setTile(x, y, new PipeTile(m2));
+				else if((drawConnMask & m2) == m2)
+					setTile(x, y, new PipeTile(m1));
 			}
 		}
 		
