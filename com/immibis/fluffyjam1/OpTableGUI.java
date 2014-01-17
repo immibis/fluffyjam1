@@ -372,8 +372,8 @@ public class OpTableGUI extends GuiContainer {
 		case Keyboard.KEY_LEFT: scrollx--; break;
 		case Keyboard.KEY_RIGHT: scrollx++; break;
 		}
-		if(par1 >= '0' && par1 <= '9' && par1 < '0' + Mode.VALUES.length)
-			curMode = Mode.VALUES[par1 - '0'];
+		if(par1 >= '1' && par1 <= '9' && par1 < '1' + Mode.VALUES.length)
+			curMode = Mode.VALUES[par1 - '1'];
 		super.keyTyped(par1, par2);
 	}
 	

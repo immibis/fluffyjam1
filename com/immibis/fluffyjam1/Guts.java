@@ -252,6 +252,11 @@ public final class Guts implements Serializable {
 			//}
 			mouthBuffer.pourInto(nets[D_R].new_contents);
 		}
+		
+		@Override
+		public List<String> describe() {
+			return Arrays.asList("Mouth", "Food & water comes in here");
+		}
 	}
 	
 	public class NoseTile extends Tile {
@@ -267,9 +272,23 @@ public final class Guts implements Serializable {
 			final float EXCH_VOLUME = 3f; 
 			
 			Reagents to_remove = nets[D_R].contents.getFraction(EXCH_VOLUME / nets[D_R].contents.capacity);
+			if(!drowning)
+				to_remove.add(Reagent.R_WATER, EXCH_VOLUME/4);
 			nets[D_R].new_contents.remove(to_remove);
 			
-			nets[D_R].new_contents.addRespectingCapacity(drowning ? Reagent.R_WATER : Reagent.R_OXYGEN, EXCH_VOLUME);
+			Reagents nc = nets[D_R].new_contents;
+			nc.addRespectingCapacity(drowning ? Reagent.R_WATER : Reagent.R_OXYGEN, EXCH_VOLUME);
+			
+			if(to_remove.get(Reagent.R_MWASTE) == 0)
+				to_remove.set(Reagent.R_WATER, 0);
+			
+			if(listener != null)
+				listener.eject(to_remove, 3);
+		}
+		
+		@Override
+		public List<String> describe() {
+			return Arrays.asList("Nose", "Exchanges air or water", "with surroundings");
 		}
 	}
 	
@@ -305,6 +324,11 @@ public final class Guts implements Serializable {
 			transfer.pourInto(nets[D_R].new_contents);
 			transfer.pourInto(nets[D_L].new_contents);
 		}
+		
+		@Override
+		public List<String> describe() {
+			return Arrays.asList("Lung", "Connect air on top", "Connect blood left & right", "Dissolves air in blood, unless drowning");
+		}
 	}
 	
 	public static class HeartTile extends Tile implements IMovable {
@@ -326,6 +350,11 @@ public final class Guts implements Serializable {
 			
 			if(nets[D_R].new_contents.get(Reagent.R_BLOOD) < nets[D_R].new_contents.capacity * TARGET_BLOOD_PRESSURE)
 				nets[D_R].new_contents.addRespectingCapacity(Reagent.R_BLOOD, 8); // TODO should not be in HeartTile
+		}
+		
+		@Override
+		public List<String> describe() {
+			return Arrays.asList("Heart", "Pumps anything from right to left", "Up to 400mL/s");
 		}
 	}
 	
@@ -414,6 +443,11 @@ public final class Guts implements Serializable {
 			transfer.pourInto(from.new_contents);
 			transfer.pourInto(drain.new_contents);
 		}
+		
+		@Override
+		public List<String> describe() {
+			return Arrays.asList("Kidney");
+		}
 	}
 	
 	public class ValveTile extends Tile implements IMovable {
@@ -434,7 +468,7 @@ public final class Guts implements Serializable {
 		
 		@Override
 		public List<String> describe() {
-			return Arrays.asList("Valve", "Auto-open: "+(autoOpen?"Yes":"No"), "Currently "+(open?"open":"closed"));
+			return Arrays.asList("Valve (ID "+id+")", "Auto-open: "+(autoOpen?"Yes":"No"), "Currently "+(open?"open":"closed"));
 		}
 		
 		boolean open = false;
@@ -484,6 +518,11 @@ public final class Guts implements Serializable {
 			pn.new_contents.remove(transfer);
 			if(listener != null)
 				listener.eject(transfer, this.id);
+		}
+		
+		@Override
+		public List<String> describe() {
+			return Arrays.asList("Hole", "Ejects things into the world");
 		}
 	}
 	
@@ -545,6 +584,14 @@ public final class Guts implements Serializable {
 			transfer.pourInto(net_blood.new_contents);
 			transfer.pourInto(net_in.new_contents);
 		}
+		
+		@Override
+		public List<String> describe() {
+			if(horiz)
+				return Arrays.asList("Intestine", "Attach bloodstream top or bottom", "Input left, output right");
+			else
+				return Arrays.asList("Intestine", "Attach bloodstream left or right", "Input top, output bottom");
+		}
 	}
 	
 	public class SensorTile extends Tile implements IMovable {
@@ -597,6 +644,11 @@ public final class Guts implements Serializable {
 			float energy_level_here = metabolize(nets[D_U].contents, nets[D_U].new_contents, energy_req, 1) / energy_req;
 			leg_energy_level = Math.min(leg_energy_level, energy_level_here);
 		}
+		
+		@Override
+		public List<String> describe() {
+			return Arrays.asList("Leg", "Requires oxygen & nutrients", "Important for sprinting");
+		}
 	}
 	
 	public class BrainTile extends Tile {
@@ -638,6 +690,11 @@ public final class Guts implements Serializable {
 			fbar = Math.min(1, blood.contents.get(Reagent.R_FOOD) / (blood.contents.get(Reagent.R_BLOOD) * Reagent.BLOOD_CAP[Reagent.R_FOOD]));
 			wbar = Math.min(1, blood.contents.get(Reagent.R_WATER) / (blood.contents.get(Reagent.R_BLOOD) * Reagent.BLOOD_CAP[Reagent.R_WATER]));
 			oxygen_level = Math.min(1, blood.contents.get(Reagent.R_OXYGEN) / (blood.contents.get(Reagent.R_BLOOD) * Reagent.BLOOD_CAP[Reagent.R_OXYGEN]));
+		}
+		
+		@Override
+		public List<String> describe() {
+			return Arrays.asList("Brain connection", "Requires oxygen & nutrients");
 		}
 	}
 	
@@ -686,7 +743,10 @@ public final class Guts implements Serializable {
 		}
 		@Override
 		public List<String> describe() {
-			return getNet().new_contents.describe();
+			List<String> s = getNet().new_contents.describe();
+			if(s.size() == 0)
+				return Arrays.asList("Empty pipe");
+			return s;
 		}
 	}
 	
@@ -699,7 +759,11 @@ public final class Guts implements Serializable {
 		
 		@Override
 		public List<String> describe() {
-			return nets[D_L].contents.describe();
+			List<String> s = nets[D_L].new_contents.describe();
+			if(s.size() == 0)
+				return Arrays.asList("Empty tank");
+			else
+				return s;
 		}
 	}
 	
@@ -727,6 +791,11 @@ public final class Guts implements Serializable {
 		}
 		public int getMask1() {
 			return mask1;
+		}
+		
+		@Override
+		public List<String> describe() {
+			return Arrays.asList("Pipe crossing");
 		}
 	}
 	
