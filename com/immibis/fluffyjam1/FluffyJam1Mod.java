@@ -294,6 +294,8 @@ public class FluffyJam1Mod implements IGuiHandler {
 		};
 		blockF_d = new BlockFluidClassic(2202, f_d, Material.water);
 		
+		MinecraftForge.setBlockHarvestLevel(blockSludge, "shovel", 2);
+		
 		Bar.initEventHandler();
 		
 		GameRegistry.registerBlock(blockOT, OpTableItem.class, "optable");
@@ -393,7 +395,7 @@ public class FluffyJam1Mod implements IGuiHandler {
 		}
 	}
 	
-	@ForgeSubscribe
+	/*@ForgeSubscribe
 	public void onEmptyBucket(FillBucketEvent evt) {
 		if(evt.current.getItem() == Item.bucketWater) {
 			if(evt.entity instanceof EntityPlayerMP) {
@@ -403,12 +405,13 @@ public class FluffyJam1Mod implements IGuiHandler {
 				evt.setResult(Event.Result.ALLOW);
 			}
 		}
-		
+	}*/
+	
+	@ForgeSubscribe
+	public void onFillBucket(FillBucketEvent evt) {
 		if(evt.current.getItem() == Item.bucketEmpty)
-			// this block is not water
 			if(evt.target.typeOfHit == EnumMovingObjectType.TILE && evt.world.getBlockId(evt.target.blockX, evt.target.blockY, evt.target.blockZ) == blockF_u.blockID)
 				evt.setCanceled(true);
-		
 	}
 	
 	@SideOnly(Side.CLIENT)

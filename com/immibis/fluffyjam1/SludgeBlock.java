@@ -26,6 +26,8 @@ public class SludgeBlock extends Block implements IFluidBlock {
 		
 		setTextureName("immibis_fluffyjam1:sludge");
 		setUnlocalizedName("immibis.fj1.sludge");
+		setHardness(30f);
+		setResistance(1000000f);
 	}
 	
 	@Override
