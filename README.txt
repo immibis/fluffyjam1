@@ -1,4 +1,4 @@
-This mod adds random stuff to the game - the end. Details will be here later.
+This mod adds random stuff to the game - the end. For more information see README-mod.txt. This is the README for GitHub.
 
 Do not be surprised if some parts of this code are not very readable or have badly named fields/methods/classes/variables.
 Some parts are deliberately obfuscated slightly (e.g. shortened variable names) to make it

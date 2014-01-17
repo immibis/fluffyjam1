@@ -189,7 +189,7 @@ public class OpTableGUI extends GuiContainer {
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 156, 228, 12, 12);
 				else if(t instanceof Guts.ValveTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, ((Guts.ValveTile)t).open ? 168 : 156, 240, 12, 12);
-				else if(t instanceof Guts.LegTile)
+				else if(t instanceof Guts.LegTile || t instanceof Guts.ArmTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 60, 240, 12, 12);
 				else if(t instanceof Guts.SpleenTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 180, 240, 12, 12);

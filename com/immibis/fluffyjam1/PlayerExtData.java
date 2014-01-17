@@ -90,6 +90,7 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 	
 	public void tick() {
 		data.leg_energy_level = 1;
+		data.arm_energy_level = 1;
 		data.is_sprinting = player.isSprinting();
 		data.tick();
 		
@@ -98,7 +99,7 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 			PacketDispatcher.sendPacketToPlayer(FluffyJam1Mod.TinyPacketHandler.getActionPacket(100), (Player)player);
 		}
 		
-		player.playerNetServerHandler.sendPacketToPlayer(FluffyJam1Mod.TinyPacketHandler.getBrainFunctionPacket(data.brain_function, data.ex1bar, data.ex2bar, data.fbar, data.wbar));
+		player.playerNetServerHandler.sendPacketToPlayer(FluffyJam1Mod.TinyPacketHandler.getBrainFunctionPacket(data.brain_function, data.ex1bar, data.ex2bar, data.fbar, data.wbar, data.arm_energy_level, data.oxygen_level));
 		player.setAir((int)(300 * data.oxygen_level));
 		
 		if(data.brain_function > 0.5f) {

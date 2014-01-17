@@ -3,6 +3,7 @@ package com.immibis.fluffyjam1;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.WeakHashMap;
 
 import cpw.mods.fml.common.network.IPacketHandler;
 import cpw.mods.fml.common.network.PacketDispatcher;
@@ -14,6 +15,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.ICrafting;
 import net.minecraft.network.INetworkManager;
+import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.Packet250CustomPayload;
 import net.minecraft.world.World;
 
@@ -45,30 +47,36 @@ public class OpTableContainer extends Container {
 	public static final String CHANNEL = "FJ1IMBOTC";
 	
 	static class PacketHandler implements IPacketHandler {
+		private WeakHashMap<INetworkManager, PacketAssembler> assemblers = new WeakHashMap<INetworkManager, PacketAssembler>();
 		@Override
 		public void onPacketData(INetworkManager manager, Packet250CustomPayload packet, Player player) {
-			Object o = IOUtils.fromBytes(packet.data);
-			Container c_ = ((EntityPlayer)player).openContainer;
-			if(c_ instanceof OpTableContainer)
-				((OpTableContainer)c_).receiveObject(o);
+			PacketAssembler pa;
+			synchronized(assemblers) {
+				pa = assemblers.get(manager);
+				if(pa == null)
+					assemblers.put(manager, pa = new PacketAssembler());
+			}
+			
+			byte[] assembledData = pa.feed(packet.data);
+			
+			if(assembledData != null) {
+				Object o = IOUtils.fromBytes(assembledData);
+				Container c_ = ((EntityPlayer)player).openContainer;
+				if(c_ instanceof OpTableContainer)
+					((OpTableContainer)c_).receiveObject(o);
+			}
 		}
 	}
 	
 	public void sendToPlayer(Object o, Player p) {
-		Packet250CustomPayload packet = new Packet250CustomPayload();
-		packet.channel = CHANNEL;
-		packet.data = IOUtils.toBytes(o);
-		packet.length = packet.data.length;
-		PacketDispatcher.sendPacketToPlayer(packet, p);
+		for(Packet packet : PacketAssembler.splitPacket(CHANNEL, IOUtils.toBytes(o)))
+			PacketDispatcher.sendPacketToPlayer(packet, p);
 	}
 	
 	@SideOnly(Side.CLIENT)
 	public void sendToServer(Object o) {
-		Packet250CustomPayload packet = new Packet250CustomPayload();
-		packet.channel = CHANNEL;
-		packet.data = IOUtils.toBytes(o);
-		packet.length = packet.data.length;
-		PacketDispatcher.sendPacketToServer(packet);
+		for(Packet packet : PacketAssembler.splitPacket(CHANNEL, IOUtils.toBytes(o)))
+			PacketDispatcher.sendPacketToServer(packet);
 	}
 	
 	@Override

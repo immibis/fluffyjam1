@@ -63,16 +63,19 @@ public class OneTile extends TileEntity {
 		for(int k = 0; k < 2*RANGE && randomStep(); k++)
 			;
 		
-		if(!isValid(x, y, z))
-			full = true;
+		// if(!isValid(x, y, z)) full = true;
 	}
 	
 	public void updateEntity() {
 		if(full)
 			return;
 		
-		if(!isValid(x, y, z) || y == Integer.MIN_VALUE)
+		if(!isValid(x, y, z) || y == Integer.MIN_VALUE) {
 			scanBlocks();
+			
+			if(!isValid(x, y, z))
+				return;
+		}
 		
 		if(sleeping)
 			return;
@@ -82,7 +85,6 @@ public class OneTile extends TileEntity {
 				Block b = getBlockFor(k);
 				if(b != null)
 					worldObj.setBlock(x, y, z, b.blockID);
-				//System.out.println(x+" "+y+" "+z);
 				my_buffer.remove(k, FluffyJam1Mod.REAGENT_PER_BLOCK);
 				return;
 			}

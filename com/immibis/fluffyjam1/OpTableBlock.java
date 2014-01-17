@@ -84,6 +84,8 @@ public class OpTableBlock extends BlockBed {
         }
         else
         {
+        	par1World.getWorldInfo().setWorldTime(FluffyJam1Mod.MIDNIGHT);
+        	
             int i1 = par1World.getBlockMetadata(par2, par3, par4);
 
             if (!isBlockHeadOfBed(i1))
@@ -124,7 +126,9 @@ public class OpTableBlock extends BlockBed {
 
                     if (entityplayer1 != null)
                     {
-                        par5EntityPlayer.addChatMessage("tile.immibis.fj1.optable.occupied");
+                        //par5EntityPlayer.addChatMessage("tile.immibis.fj1.optable.occupied");
+                    	par5EntityPlayer.openGui(FluffyJam1Mod.INSTANCE, FluffyJam1Mod.GUI_OP_TABLE, par1World, par2, par3, par4);
+                        
                         return true;
                     }
 

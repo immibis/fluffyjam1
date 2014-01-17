@@ -15,8 +15,9 @@ public class Bar {
 	public static final Bar ex1 = new Bar("immibis_fluffyjam1:drop", 0xFFFF00, Float.NEGATIVE_INFINITY, 0.8f);
 	public static final Bar ex2 = new Bar("immibis_fluffyjam1:itemS", 0x604000, Float.NEGATIVE_INFINITY, 0.8f);
 	public static final Bar bf = new Bar("immibis_fluffyjam1:smiley", 0x00FF00, 0.6f, Float.POSITIVE_INFINITY);
+	public static final Bar a = new Bar("immibis_fluffyjam1:bubble", 0x80FFFF, 0.5f, Float.POSITIVE_INFINITY);
 	public static final Bar[] bars = new Bar[] {
-		f, w, ex1, ex2, bf
+		f, w, ex1, ex2, bf, a
 	};
 	
 	public String iconName;

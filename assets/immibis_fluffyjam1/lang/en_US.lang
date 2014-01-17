@@ -2,7 +2,7 @@ tile.immibis.fj1.optable.occupied=Someone is already on this operating table!
 tile.immibis.fj1.optable.name=Operating Table
 tile.immibis.fj1.sludge.name=Sludge
 item.immibis.fj1.itemS.name=Ball of sludge
-tile.immibis.fj1.t.name=Type Omega In-Line Extraction Terminal
+tile.immibis.fj1.t.name=Terrain-Outflow Intelligent Liquid Extraction Terminal
 
 death.attack.fj1imbds=%s failed biology 101
 death.attack.fj1imbds.plyer=%1$s failed biology 101 while escaping from %2$s

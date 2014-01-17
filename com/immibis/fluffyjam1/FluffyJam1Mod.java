@@ -19,6 +19,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.ImmibisFJ1_ProtectedAccessProxy;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.network.INetworkManager;
 import net.minecraft.network.NetLoginHandler;
 import net.minecraft.network.NetServerHandler;
@@ -44,6 +45,7 @@ import net.minecraftforge.event.ForgeSubscribe;
 import net.minecraftforge.event.entity.EntityEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.player.FillBucketEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fluids.BlockFluidBase;
 import net.minecraftforge.fluids.BlockFluidClassic;
@@ -75,7 +77,7 @@ import cpw.mods.fml.relauncher.FMLLaunchHandler;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-@Mod(modid="immibis_fj1", name="Immibis Fluffy Jam 1 Untitled Mod", version="1.0")
+@Mod(modid="immibis_fj1", name="Totally Random Surgery Mod", version="1.0")
 @NetworkMod(clientSideRequired=true, serverSideRequired=false, tinyPacketHandler=FluffyJam1Mod.TinyPacketHandler.class,
 	serverPacketHandlerSpec=@NetworkMod.SidedPacketHandler(channels={"FJ1IMB"}, packetHandler=FluffyJam1Mod.ServerPacketHandler.class)
 )
@@ -89,16 +91,19 @@ public class FluffyJam1Mod implements IGuiHandler {
 	public static final int REAGENT_PER_BLOCK = 200;
 	public static final float REAGENT_PER_MILLIBUCKET_DRANK = 0.5f;
 	
+	public static final long MIDNIGHT = 18000;
+	
 	public static final int GUI_OP_TABLE = 1;
 	
 	public static Fluid f_u, f_d, f_sl;
 	
-	public static final boolean SELF_OP_MODE = true; // if true, players operate on themselves, for SSP testing
+	public static boolean SELF_OP_MODE = true; // if true, players operate on themselves, for SSP testing
 	
 	@Instance("immibis_fj1")
 	public static FluffyJam1Mod INSTANCE;
 	
 	public static float clientBrainFunction;
+	public static float clientArmFunction;
 	
 	public static class TinyPacketHandler implements ITinyPacketHandler {
 		@Override
@@ -109,6 +114,8 @@ public class FluffyJam1Mod implements IGuiHandler {
 				Bar.ex2.value = (p.itemData[2] & 255) / 255f;
 				Bar.f.value = (p.itemData[3] & 255) / 255f;
 				Bar.w.value = (p.itemData[4] & 255) / 255f;
+				clientArmFunction = (p.itemData[5] & 255) / 255f;
+				Bar.a.value = (p.itemData[6] & 255) / 255f;
 			}
 			if(p.uniqueID == 1)
 				PlayerExtData.get(((NetServerHandler)handler).playerEntity).empty(1);
@@ -120,8 +127,8 @@ public class FluffyJam1Mod implements IGuiHandler {
 				proxy.stopSprinting();
 		}
 		
-		public static Packet getBrainFunctionPacket(float bf, float bl, float p, float f, float w) {
-			return PacketDispatcher.getTinyPacket(INSTANCE, (short)0, new byte[] {(byte)(bf * 255), (byte)(bl * 255), (byte)(p * 255), (byte)(f * 255), (byte)(w * 255)});
+		public static Packet getBrainFunctionPacket(float bf, float bl, float p, float f, float w, float af, float air) {
+			return PacketDispatcher.getTinyPacket(INSTANCE, (short)0, new byte[] {(byte)(bf * 255), (byte)(bl * 255), (byte)(p * 255), (byte)(f * 255), (byte)(w * 255), (byte)(af * 255), (byte)(air * 255)});
 		}
 		
 		public static Packet getActionPacket(int a) {
@@ -142,6 +149,20 @@ public class FluffyJam1Mod implements IGuiHandler {
 			}
 		}
 		
+	}
+	
+	@ForgeSubscribe
+	public void onBreakSpeed(PlayerEvent.BreakSpeed evt) {
+		EntityPlayer pl = evt.entityPlayer;
+		float arm_function;
+		if(pl instanceof EntityPlayerMP)
+			arm_function = PlayerExtData.get((EntityPlayerMP)pl).data.arm_energy_level;
+		else if(pl.worldObj.isRemote)
+			arm_function = clientArmFunction;
+		else
+			return;
+		
+		evt.newSpeed *= arm_function;
 	}
 	
 	@ForgeSubscribe(priority = EventPriority.LOW)
@@ -298,11 +319,22 @@ public class FluffyJam1Mod implements IGuiHandler {
 		
 		Bar.initEventHandler();
 		
+		SELF_OP_MODE = FMLLaunchHandler.side().isClient();
+		
 		GameRegistry.registerBlock(blockOT, OpTableItem.class, "optable");
 		GameRegistry.registerBlock(blockF_u, "fu");
 		GameRegistry.registerBlock(blockF_d, "fd");
 		GameRegistry.registerBlock(block1, "1");
 		GameRegistry.registerBlock(blockSludge, "s");
+		
+		GameRegistry.addRecipe(new ItemStack(block1),
+			"  W",
+			"SW/",
+			" SS",
+			'W', Item.bucketWater,
+			'S', Block.stone,
+			'/', Item.stick
+			);
 		
 		NetworkRegistry.instance().registerGuiHandler(this, this);
 		NetworkRegistry.instance().registerChannel(new OpTableContainer.PacketHandler(), OpTableContainer.CHANNEL);
@@ -317,15 +349,22 @@ public class FluffyJam1Mod implements IGuiHandler {
 			@Override
 			public void tickStart(EnumSet<TickType> type, Object... tickData) {
 				EntityPlayer pl = (EntityPlayer)tickData[0];
-				if(pl.sleepTimer >= 98 && pl.isPlayerSleeping()) {
+				boolean inOperatingTable = pl.isPlayerSleeping();
+				if(inOperatingTable) {
 					ChunkCoordinates bed = pl.playerLocation;
-					if(bed != null && !pl.worldObj.blockExists(bed.posX, bed.posY, bed.posZ) || pl.worldObj.getBlockId(bed.posX, bed.posY, bed.posZ) == blockOT.blockID) {
-						// players in operating tables aren't actually sleeping
-						// so don't let them become "fully asleep" at which point it would otherwise become day.
-						// players are fully asleep once sleepTimer reaches 100.
-						pl.sleepTimer = 98;
-					}
+					if(bed == null || !pl.worldObj.blockExists(bed.posX, bed.posY, bed.posZ) || pl.worldObj.getBlockId(bed.posX, bed.posY, bed.posZ) != blockOT.blockID)
+						inOperatingTable = false;
 				}
+				
+				if(pl.sleepTimer >= 98 && inOperatingTable) {
+					// players in operating tables aren't actually sleeping
+					// so don't let them become "fully asleep" at which point it would otherwise become day.
+					// players are fully asleep once sleepTimer reaches 100.
+					pl.sleepTimer = 98;
+				}
+				
+				if(inOperatingTable)
+					pl.worldObj.getWorldInfo().setWorldTime(MIDNIGHT);
 				
 				PlayerExtData.get((EntityPlayerMP)pl).tick();
 			}
@@ -371,13 +410,17 @@ public class FluffyJam1Mod implements IGuiHandler {
 		if(evt.action == PlayerInteractEvent.Action.RIGHT_CLICK_AIR || evt.action == PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK) {
 			if(evt.entityPlayer.inventory.getCurrentItem() == null) {
 				MovingObjectPosition rt = OpTableItem.rayTraceFromPlayerForBuckets(evt.entityPlayer);
-				int hitBlockID = evt.entityPlayer.worldObj.getBlockId(rt.blockX, rt.blockY, rt.blockZ);
-				if(rt != null && rt.typeOfHit == EnumMovingObjectType.TILE && (hitBlockID == Block.waterMoving.blockID || hitBlockID == Block.waterStill.blockID)) {
-					// calls drink(evt.entityPlayer) on the server
-					PacketDispatcher.sendPacketToServer(TinyPacketHandler.getActionPacket(10));
-					evt.setCanceled(true);
-					evt.useBlock = Event.Result.DENY;
-					evt.useItem = Event.Result.DENY;
+				if(rt != null && rt.typeOfHit == EnumMovingObjectType.TILE) {
+					int hitBlockID = evt.entityPlayer.worldObj.getBlockId(rt.blockX, rt.blockY, rt.blockZ);
+					if(hitBlockID == Block.waterMoving.blockID || hitBlockID == Block.waterStill.blockID) {
+						if(evt.entityPlayer.worldObj.getBlockMetadata(rt.blockX, rt.blockY, rt.blockZ) == 0) {
+							// calls drink(evt.entityPlayer) on the server
+							PacketDispatcher.sendPacketToServer(TinyPacketHandler.getActionPacket(10));
+							evt.setCanceled(true);
+							evt.useBlock = Event.Result.DENY;
+							evt.useItem = Event.Result.DENY;
+						}
+					}
 				}
 			}
 		}
@@ -388,10 +431,14 @@ public class FluffyJam1Mod implements IGuiHandler {
 			return;
 		
 		MovingObjectPosition rt = OpTableItem.rayTraceFromPlayerForBuckets(ply);
+		if(rt == null) return;
+		if(rt.typeOfHit != EnumMovingObjectType.TILE) return;
 		int hitBlockID = ply.worldObj.getBlockId(rt.blockX, rt.blockY, rt.blockZ);
-		if(rt != null && rt.typeOfHit == EnumMovingObjectType.TILE && (hitBlockID == Block.waterMoving.blockID || hitBlockID == Block.waterStill.blockID)) {
-			ply.worldObj.setBlockToAir(rt.blockX, rt.blockY, rt.blockZ);
-			PlayerExtData.get((EntityPlayerMP)ply).drink(1000);
+		if(hitBlockID == Block.waterMoving.blockID || hitBlockID == Block.waterStill.blockID) {
+			if(ply.worldObj.getBlockMetadata(rt.blockX, rt.blockY, rt.blockZ) == 0) {
+				ply.worldObj.setBlockToAir(rt.blockX, rt.blockY, rt.blockZ);
+				PlayerExtData.get((EntityPlayerMP)ply).drink(1000);
+			}
 		}
 	}
 	

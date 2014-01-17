@@ -106,6 +106,7 @@ public final class Guts implements Serializable {
 		case 'T': return new TankTile();
 		case 'B': return new BrainTile();
 		case 'G': return new LegTile();
+		case 'R': return new ArmTile();
 		case 'S': return new SensorTile(Integer.parseInt(def.substring(1), 10));
 		case 'K':  {
 			String[] p = def.substring(1).split(",");
@@ -145,10 +146,10 @@ public final class Guts implements Serializable {
 	public static final float MAX_BLOOD_WATER = 1.0f; // target ratio of water:blood - kidneys will remove excess 
 	
 	// energy units per tick, aka EU/t
-	public static final float METAB_RATE_BRAIN		= 1.0f / 20f;
-	public static final float METAB_RATE_HEART		= 0.1f / 20f;
+	public static final float METAB_RATE_BRAIN		= 0.5f / 20f;
 	public static final float METAB_RATE_LEG		= 0.2f / 20f;
 	public static final float METAB_RATE_LEG_SPRINT	= 2.0f / 20f;
+	public static final float METAB_RATE_ARM		= 0.1f / 20f;
 	
 	
 	// The amount of oxygen and food used, and mwaste produced, per energy unit (in mL/EU)
@@ -157,7 +158,7 @@ public final class Guts implements Serializable {
 	public static final float BASE_METABOLIC_WASTE_RATIO = 0.35f;
 	
 	// amount of food/tick expected to be used when not doing anything
-	public static final float FOOD_USE_RATE_IDLE = (METAB_RATE_BRAIN + METAB_RATE_HEART + 2*METAB_RATE_LEG) * BASE_METABOLIC_FOOD_RATIO;
+	public static final float FOOD_USE_RATE_IDLE = (METAB_RATE_BRAIN + 2*METAB_RATE_LEG + 2*METAB_RATE_ARM) * BASE_METABOLIC_FOOD_RATIO;
 	
 	
 	public static class Tile implements Serializable {
@@ -347,8 +348,6 @@ public final class Guts implements Serializable {
 			float flow = Math.max(20, calcFlow(nets[D_R], nets[D_L]));
 			Reagents transfer = nets[D_R].contents.getVolume(flow);
 			nets[D_R].new_contents.remove(transfer);
-			
-			float energy = metabolize(transfer, transfer, METAB_RATE_HEART, 1);
 			
 			transfer.pourInto(nets[D_L].new_contents);
 			transfer.pourInto(nets[D_R].new_contents);
@@ -646,6 +645,11 @@ public final class Guts implements Serializable {
 			if(nets[D_L].new_contents.get(Reagent.R_BLOOD) < nets[D_L].new_contents.capacity * TARGET_BLOOD_PRESSURE)
 				nets[D_L].new_contents.addRespectingCapacity(Reagent.R_BLOOD, 1f); // was 8
 		}
+		
+		@Override
+		public List<String> describe() {
+			return Arrays.asList("Spleen", "Produces blood");
+		}
 	}
 	
 	public class LegTile extends Tile {
@@ -668,6 +672,28 @@ public final class Guts implements Serializable {
 		}
 	}
 	
+	float arm_energy_level;
+	
+	public class ArmTile extends Tile {
+		private static final long serialVersionUID = 1L;
+		
+		void initNets() {
+			initNet(DM_U);
+		}
+		
+		@Override
+		public void tick() {
+			float energy_req = METAB_RATE_ARM;
+			float energy_level_here = metabolize(nets[D_U].contents, nets[D_U].new_contents, energy_req, 1) / energy_req;
+			arm_energy_level = Math.min(leg_energy_level, energy_level_here);
+		}
+		
+		@Override
+		public List<String> describe() {
+			return Arrays.asList("Arm", "Requires oxygen & nutrients", "Important for digging");
+		}
+	}
+	
 	public class BrainTile extends Tile {
 		private static final long serialVersionUID = 1L;
 		
@@ -676,8 +702,8 @@ public final class Guts implements Serializable {
 		}
 		
 		// So you don't die immediately.
-		float startup_food = FOOD_USE_RATE_IDLE * 2000f;
-		float startup_water = 150;
+		float startup_food = 300;
+		float startup_water = 300;
 		
 		@Override
 		public void tick() {
