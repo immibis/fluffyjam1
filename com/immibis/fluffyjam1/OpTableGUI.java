@@ -103,19 +103,19 @@ public class OpTableGUI extends GuiContainer {
 					}
 				} else if(t instanceof Guts.PipeCrossTile) {
 					switch(((Guts.PipeCrossTile)t).getMask1()) {
-					case Guts.DM_L | Guts.DM_D:
+					case Guts.DM_L | Guts.DM_D: case Guts.DM_U | Guts.DM_R:
 						drawReagents(t.nets[Guts.D_R].new_contents, px+10, py+3, 2, 6);
 						drawReagents(t.nets[Guts.D_R].new_contents, px+3, py, 6, 2);
 						drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 9, 6);
 						drawReagents(t.nets[Guts.D_L].new_contents, px+3, py+9, 6, 3);
 						break;
-					case Guts.DM_L | Guts.DM_U:
+					case Guts.DM_L | Guts.DM_U: case Guts.DM_D | Guts.DM_R:
 						drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 2, 6);
 						drawReagents(t.nets[Guts.D_L].new_contents, px+3, py, 6, 2);
 						drawReagents(t.nets[Guts.D_R].new_contents, px+3, py+3, 9, 6);
 						drawReagents(t.nets[Guts.D_R].new_contents, px+3, py+9, 6, 3);
 						break;
-					case Guts.DM_L | Guts.DM_R:
+					case Guts.DM_L | Guts.DM_R: case Guts.DM_D | Guts.DM_U:
 						drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 2, 6);
 						drawReagents(t.nets[Guts.D_L].new_contents, px+10, py+3, 2, 6);
 						drawReagents(t.nets[Guts.D_U].new_contents, px+3, py, 6, 12);
@@ -187,8 +187,21 @@ public class OpTableGUI extends GuiContainer {
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 156, 228, 12, 12);
 				else if(t instanceof Guts.ValveTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, ((Guts.ValveTile)t).open ? 168 : 156, 240, 12, 12);
-				if(t != null && drawnPipeLayer != null && drawnPipeLayer[x+scrollx][y+scrolly])
-					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, curMode == Mode.REMOVE_PIPE ? 144 : 132, 240, 12, 12);
+				
+				switch(curMode) {
+				case REMOVE_PIPE:
+					if(t != null && drawnPipeLayer != null && drawnPipeLayer[x+scrollx][y+scrolly])
+						drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 144, 240, 12, 12);
+					break;
+				case PLACE_PIPE:
+					if(t != null && drawnPipeLayer != null && drawnPipeLayer[x+scrollx][y+scrolly])
+						drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 132, 240, 12, 12);
+					break;
+				case MOVE_ORGANS:
+					if(t != null && t instanceof Guts.IMovable && ((moveFromX == -1 && moveFromY == -1) || (moveFromX == x+scrollx && moveFromY == y+scrolly)))
+						drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 168, 228, 12, 12);
+					break;
+				}					
 			}
 		
 		GL11.glDisable(GL11.GL_BLEND);
@@ -268,9 +281,29 @@ public class OpTableGUI extends GuiContainer {
 		//super.mouseClicked(x, y, btn);
 		
 		Mode mode = getModeSelectorUnderMouse(x-guiLeft, y-guiTop);
-		if(mode != null)
+		if(mode != null) {
 			curMode = mode;
+			return;
+		}
+		
+		int tx = (x - guiLeft - 8) / 12, ty = (y - guiTop - 6) / 12;
+		if(!validOnScreenTileCoords(tx, ty))
+			return;
+		
+		tx += scrollx; ty += scrolly;
+		if(!cont.guts.validCoords(tx, ty))
+			return;
+		
+		if(btn == 0 && (curMode == Mode.REMOVE_PIPE || curMode == Mode.PLACE_PIPE)) {
+			drawnPipeLayer = new boolean[cont.guts.w][cont.guts.h];
+			drawnPipeLayer[tx][ty] = true;
+		} else if(btn == 0 && curMode == Mode.MOVE_ORGANS) {
+			moveFromX = tx;
+			moveFromY = ty;
+		}
 	}
+	
+	private int moveFromX = -1, moveFromY = -1;
 	
 	@Override
 	protected void mouseClickMove(int x, int y, int btn, long par4) {
@@ -285,13 +318,14 @@ public class OpTableGUI extends GuiContainer {
 		x -= guiLeft;
 		y -= guiTop;
 		
+		boolean mouseOnValidTile = true;
 		int tx = (x - 8) / 12, ty = (y - 6) / 12;
 		if(!validOnScreenTileCoords(tx, ty))
-			return;
+			mouseOnValidTile = false;
 		
 		tx += scrollx; ty += scrolly;
 		if(!cont.guts.validCoords(tx, ty))
-			return;
+			mouseOnValidTile = false;
 		
 		if(btn == 0) {
 			
@@ -304,17 +338,25 @@ public class OpTableGUI extends GuiContainer {
 					
 					cont.guts.finishDrawingPipes(drawnPipeLayer, curMode == Mode.REMOVE_PIPE);
 				}
+			
+			} else if(curMode == Mode.MOVE_ORGANS) {
+				if(mouseOnValidTile && cont.guts.validCoords(moveFromX, moveFromY)) {
+					OpTableContainer.MoveData md = new OpTableContainer.MoveData();
+					md.fx = moveFromX;
+					md.fy = moveFromY;
+					md.tx = tx;
+					md.ty = ty;
+					cont.sendToServer(md);
+					
+					cont.guts.moveTile(moveFromX, moveFromY, tx, ty);
+				}
 			}
 			
 			drawnPipeLayer = null;
+			moveFromX = moveFromY = -1;
 			
-		} else if(Mouse.isButtonDown(0) && (curMode == Mode.REMOVE_PIPE || curMode == Mode.PLACE_PIPE)) {
-			if(drawnPipeLayer == null)
-				drawnPipeLayer = new boolean[cont.guts.w][cont.guts.h];
-			
-			//Guts.Tile oldTile = cont.guts.getTile(tx, ty);
-			//if(oldTile instanceof Guts.PipeTile || oldTile instanceof Guts.EmptyTile)
-				drawnPipeLayer[tx][ty] = true;
+		} else if(mouseOnValidTile && Mouse.isButtonDown(0) && (curMode == Mode.REMOVE_PIPE || curMode == Mode.PLACE_PIPE)) {
+			drawnPipeLayer[tx][ty] = true;
 		}
 	}
 	
@@ -328,6 +370,8 @@ public class OpTableGUI extends GuiContainer {
 		case Keyboard.KEY_LEFT: scrollx--; break;
 		case Keyboard.KEY_RIGHT: scrollx++; break;
 		}
+		if(par1 >= '0' && par1 <= '9' && par1 < '0' + Mode.VALUES.length)
+			curMode = Mode.VALUES[par1 - '0'];
 		super.keyTyped(par1, par2);
 	}
 	

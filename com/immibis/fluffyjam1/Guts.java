@@ -231,6 +231,8 @@ public final class Guts implements Serializable {
 		static EmptyTile instance = new EmptyTile();
 	}
 	
+	public static interface IMovable {}
+	
 	public Reagents mouthBuffer = new Reagents();
 	
 	public class MouthTile extends Tile {
@@ -271,7 +273,7 @@ public final class Guts implements Serializable {
 		}
 	}
 	
-	public static class LungTile extends Tile {
+	public static class LungTile extends Tile implements IMovable {
 		private static final long serialVersionUID = 1L;
 		
 		void initNets() {
@@ -305,7 +307,7 @@ public final class Guts implements Serializable {
 		}
 	}
 	
-	public static class HeartTile extends Tile {
+	public static class HeartTile extends Tile implements IMovable {
 		private static final long serialVersionUID = 1L;
 		
 		void initNets() {
@@ -414,7 +416,7 @@ public final class Guts implements Serializable {
 		}
 	}
 	
-	public class ValveTile extends Tile {
+	public class ValveTile extends Tile implements IMovable {
 		private static final long serialVersionUID = 1L;
 		
 		int id;
@@ -485,7 +487,7 @@ public final class Guts implements Serializable {
 		}
 	}
 	
-	public static class IntestineTile extends Tile {
+	public static class IntestineTile extends Tile implements IMovable {
 		private static final long serialVersionUID = 1L;
 		
 		boolean horiz;
@@ -545,7 +547,7 @@ public final class Guts implements Serializable {
 		}
 	}
 	
-	public class SensorTile extends Tile {
+	public class SensorTile extends Tile implements IMovable {
 		int id;
 		
 		SensorTile(int id) {
@@ -662,7 +664,7 @@ public final class Guts implements Serializable {
 		public int getMask();
 	}
 	
-	public static class PipeTile extends Tile implements IPipeTile {
+	public static class PipeTile extends Tile implements IPipeTile, IMovable {
 		private static final long serialVersionUID = 1L;
 		
 		private byte mask;
@@ -688,7 +690,7 @@ public final class Guts implements Serializable {
 		}
 	}
 	
-	public class TankTile extends Tile {
+	public class TankTile extends Tile implements IMovable {
 		private static final long serialVersionUID = 1L;
 		
 		void initNets() {
@@ -710,7 +712,7 @@ public final class Guts implements Serializable {
 		}
 	}
 
-	public static class PipeCrossTile extends Tile {
+	public static class PipeCrossTile extends Tile implements IMovable {
 		private static final long serialVersionUID = 1L;
 		
 		private byte mask1, mask2;
@@ -969,5 +971,17 @@ public final class Guts implements Serializable {
 		
 		buildNetworks();
 		
+	}
+
+	public void moveTile(int fx, int fy, int tx, int ty) {
+		if(!(getTile(tx, ty) instanceof EmptyTile))
+			return;
+		if(!(getTile(fx, fy) instanceof IMovable))
+			return;
+		
+		unbuildNetworks();
+		setTile(tx, ty, getTile(fx, fy));
+		setTile(fx, fy, EmptyTile.instance);
+		buildNetworks();
 	}
 }

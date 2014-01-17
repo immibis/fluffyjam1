@@ -37,6 +37,11 @@ public class OpTableContainer extends Container {
 		boolean[][] map;
 	}
 	
+	static class MoveData implements Serializable {
+		private static final long serialVersionUID = 1;
+		int fx, fy, tx, ty;
+	}
+	
 	public static final String CHANNEL = "FJ1IMBOTC";
 	
 	static class PacketHandler implements IPacketHandler {
@@ -80,6 +85,9 @@ public class OpTableContainer extends Container {
 		else if(o instanceof DrawData) {
 			DrawData dd = (DrawData)o;
 			PlayerExtData.get((EntityPlayerMP)operee).data.finishDrawingPipes(dd.map, dd.removeMode);
+		} else if(o instanceof MoveData) {
+			MoveData md = (MoveData)o;
+			PlayerExtData.get((EntityPlayerMP)operee).data.moveTile(md.fx, md.fy, md.tx, md.ty);
 		}
 	}
 
