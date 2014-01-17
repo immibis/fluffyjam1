@@ -1,11 +1,14 @@
 package com.immibis.fluffyjam1;
 
+import java.util.ArrayList;
+
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IconRegister;
+import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
@@ -23,6 +26,16 @@ public class SludgeBlock extends Block implements IFluidBlock {
 		
 		setTextureName("immibis_fluffyjam1:sludge");
 		setUnlocalizedName("immibis.fj1.sludge");
+	}
+	
+	@Override
+	public ArrayList<ItemStack> getBlockDropped(World world, int x, int y, int z, int metadata, int fortune) {
+		ArrayList<ItemStack> rv = new ArrayList<ItemStack>();
+		rv.add(new ItemStack(FluffyJam1Mod.itemSludge));
+		rv.add(new ItemStack(FluffyJam1Mod.itemSludge));
+		rv.add(new ItemStack(FluffyJam1Mod.itemSludge));
+		rv.add(new ItemStack(FluffyJam1Mod.itemSludge));
+		return rv;
 	}
 	
 	@Override

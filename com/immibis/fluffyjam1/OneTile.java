@@ -89,22 +89,25 @@ public class OneTile extends TileEntity {
 		if(full || !isValid(x, y, z))
 			return;
 		
-		r.convertAll(Reagent.R_FOOD, Reagent.R_STOOL);
-		
-		//if(r.get(Reagent.R_WATER) < r.get(Reagent.R_MWASTE)*1.5f)
-			r.convertAll(Reagent.R_WATER, Reagent.R_MWASTE);
+		convertForBlockPlacement(r);
 		
 		r.pourInto(my_buffer);
 		sleeping = false;
 	}
 	
-	private Block getBlockFor(int id) {
+	public static void convertForBlockPlacement(Reagents r) {
+		r.convertAll(Reagent.R_FOOD, Reagent.R_STOOL);
+		
+		//if(r.get(Reagent.R_WATER) < r.get(Reagent.R_MWASTE)*1.5f)
+			r.convertAll(Reagent.R_WATER, Reagent.R_MWASTE);
+	}
+	
+	public static Block getBlockFor(int id) {
 		switch(id) {
 		case Reagent.R_BLOOD: return null;
 		case Reagent.R_MWASTE: return FluffyJam1Mod.blockF_u;
 		case Reagent.R_OXYGEN: return null;
 		case Reagent.R_STOOL: return FluffyJam1Mod.blockSludge;
-		//case Reagent.R_WATER: return Block.waterMoving;
 		}
 		System.err.println("getBlockFor unexpected reagent "+id);
 		return null;

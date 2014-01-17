@@ -82,7 +82,7 @@ public class FluffyJam1Mod implements IGuiHandler {
 	public static OpTableBlock blockOT;
 	public static BlockFluidBase blockF_u, blockF_d;
 	public static OneBlock block1;
-	public static Item itemS;
+	public static Item itemSludge;
 	public static Block blockSludge;
 	
 	public static final int REAGENT_PER_BLOCK = 200;
@@ -266,7 +266,7 @@ public class FluffyJam1Mod implements IGuiHandler {
 	public void init(FMLInitializationEvent evt) {
 		blockOT = new OpTableBlock(2200);
 		block1 = new OneBlock(2203);
-		itemS = new Item(22000).setUnlocalizedName("immibis.fj1.itemS").setMaxStackSize(1).setTextureName("immibis_fluffyjam1:itemS");
+		itemSludge = new Item(22000).setUnlocalizedName("immibis.fj1.itemS").setMaxStackSize(1).setTextureName("immibis_fluffyjam1:itemS");
 		blockSludge = new SludgeBlock(2204);
 		
 		f_u = new Fluid("FJ1IMBU");

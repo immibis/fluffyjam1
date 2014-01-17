@@ -23,7 +23,8 @@ import net.minecraftforge.fluids.BlockFluidBase;
 
 public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 
-	public static final String EXT_PROP_ID = "FJ1IMBGT";
+	public static final String EXT_PROP_ID = "FJ1IMB";
+	public static final String NBT_ID = "FJ1IMB";
 	
 	public EntityPlayerMP player;
 	public Guts data;
@@ -105,7 +106,7 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 				ticksSinceDamage = 0;
 				player.attackEntityFrom(FluffyJam1Mod.damageSource, 1.0f);
 			}
-		} 
+		}
 		
 		data.drowning = player.isInsideOfMaterial(Material.water);
 	}
@@ -127,7 +128,7 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 			((OneTile)player.worldObj.getBlockTileEntity(x, y, z)).accept(ebuffer);
 		}
 		
-		while(ebuffer.getTotal() > 100) {
+		/*while(ebuffer.getTotal() > 100) {
 			Reagents dropped = ebuffer.getVolume(100);
 			ebuffer.remove(dropped);
 			
@@ -139,9 +140,22 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 					ts += dropped.get(k);
 			
 			if(tl > ts)
-				dropLiquid(FluffyJam1Mod.blockF_u);
+				dropBlock(FluffyJam1Mod.blockF_u);
 			else
 				dropSolid(dropped);
+		}*/
+		
+		final int REAGENT_PER_BLOCK = FluffyJam1Mod.REAGENT_PER_BLOCK / 2; // penalty - create more blocks than using a OneTile
+		
+		OneTile.convertForBlockPlacement(ebuffer);
+		if(ebuffer.getTotal() >= REAGENT_PER_BLOCK) {
+			for(int k = 0; k < Reagent.COUNT; k++) {
+				while(ebuffer.get(k) >= REAGENT_PER_BLOCK) {
+					Block b = OneTile.getBlockFor(k);
+					ebuffer.remove(k, REAGENT_PER_BLOCK);
+					dropBlock(b);
+				}
+			}
 		}
 	}
 	
@@ -154,7 +168,7 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 		return true;
 	}
 
-	private void dropLiquid(Block block) {
+	private void dropBlock(Block block) {
 		World w = player.worldObj;
 		int x = MathHelper.floor_double(player.posX);
 		int y = MathHelper.floor_double(player.posY);
@@ -181,7 +195,7 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 
 
 	private void dropSolid(Reagents r) {
-		ItemStack is = new ItemStack(FluffyJam1Mod.itemS);
+		ItemStack is = new ItemStack(FluffyJam1Mod.itemSludge);
 		is.stackTagCompound = new NBTTagCompound();
 		is.stackTagCompound.setByteArray("reagents", IOUtils.toBytes(r));
 		EntityItem ei = new EntityItem(player.worldObj, player.posX, player.posY + 0.6, player.posZ, is);
@@ -196,14 +210,20 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 
 	@Override
 	public void saveNBTData(NBTTagCompound compound) {
-		// TODO Auto-generated method stub
-		
+		NBTTagCompound tag = new NBTTagCompound();
+		tag.setInteger("tsd", ticksSinceDamage);
+		tag.setByteArray("data", IOUtils.toBytes(data));
+		compound.setTag(NBT_ID, tag);
 	}
 
 	@Override
 	public void loadNBTData(NBTTagCompound compound) {
-		// TODO Auto-generated method stub
-		
+		NBTTagCompound tag = compound.getCompoundTag(NBT_ID);
+		if(tag.hasKey("data")) {
+			data = (Guts)IOUtils.fromBytes(tag.getByteArray("data"));
+			data.listener = this;
+		}
+		ticksSinceDamage = tag.getInteger("tsd");
 	}
 
 	@Override
