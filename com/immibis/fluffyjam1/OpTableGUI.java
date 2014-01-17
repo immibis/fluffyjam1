@@ -18,7 +18,24 @@ public class OpTableGUI extends GuiContainer {
 	
 	private int scrollx, scrolly;
 	private boolean[][] drawnPipeLayer;
-	private boolean drawnPipeLayer_removeMode;
+	private Mode curMode = Mode.EXAMINE;
+	
+	enum Mode {
+		EXAMINE(224, 89, "Mode: Examine"),
+		PLACE_PIPE(224, 113, "Mode: Place pipes"),
+		REMOVE_PIPE(224, 137, "Mode: Remove pipes"),
+		MOVE_ORGANS(224, 161, "Mode: Move organs"),
+		;
+		private Mode(int u, int v, String title) {
+			this.u = u;
+			this.v = v;
+			this.title = title;
+		}
+		int u, v; // position of icon in texture sheet
+		String title;
+		
+		static Mode[] VALUES = values();
+	}
 	
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float f, int mousex, int mousey) {
@@ -32,6 +49,12 @@ public class OpTableGUI extends GuiContainer {
 		
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
 		GL11.glBegin(GL11.GL_QUADS);
+		
+		GL11.glColor3f(1, 1, 1);
+		GL11.glVertex2i(guiLeft+8, guiTop+6);
+		GL11.glVertex2i(guiLeft+8, guiTop+6+15*12);
+		GL11.glVertex2i(guiLeft+8+20*12, guiTop+6+15*12);
+		GL11.glVertex2i(guiLeft+8+20*12, guiTop+6);
 		
 		for(int y = 0; y < 15; y++)
 			for(int x = 0; x < 20; x++) {
@@ -110,7 +133,7 @@ public class OpTableGUI extends GuiContainer {
 				} else if(t instanceof Guts.KidneyTile)
 					drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 12, 6);
 				else if(t instanceof Guts.MouthTile)
-					drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 12, 6);
+					drawReagents(t.nets[Guts.D_R].new_contents, px, py+3, 12, 6);
 			}
 		
 		GL11.glEnd();
@@ -165,15 +188,17 @@ public class OpTableGUI extends GuiContainer {
 				else if(t instanceof Guts.ValveTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, ((Guts.ValveTile)t).open ? 168 : 156, 240, 12, 12);
 				if(t != null && drawnPipeLayer != null && drawnPipeLayer[x+scrollx][y+scrolly])
-					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, drawnPipeLayer_removeMode ? 144 : 132, 240, 12, 12);
+					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, curMode == Mode.REMOVE_PIPE ? 144 : 132, 240, 12, 12);
 			}
 		
 		GL11.glDisable(GL11.GL_BLEND);
 		
+		drawModeSelector();
+		
 		mousex -= guiLeft;
 		mousey -= guiTop;
 		
-		//if(Mouse.isButtonDown(1))
+		if(curMode == Mode.EXAMINE)
 		{
 			int hoverx = (mousex - 8) / 12, hovery = (mousey - 6) / 12;
 			
@@ -185,8 +210,55 @@ public class OpTableGUI extends GuiContainer {
 				}
 			}
 		}
+		
+		Mode modeUnderMouse = getModeSelectorUnderMouse(mousex, mousey);
+		if(modeUnderMouse != null)
+			drawHoveringText(Arrays.asList(modeUnderMouse.title), guiLeft+mousex, guiTop+mousey, fontRenderer);
 	}
 	
+	private Mode getModeSelectorUnderMouse(int x, int y) {
+		final int size = 24;
+		x -= xSize + 2;
+		y -= 6;
+		if(x < 0) return null;
+		if(x >= size+2) return null;
+		if(y < 0) return null;
+		
+		int num = y / (size+4);
+		int rely = y % (size+4);
+		if(rely >= size+2) return null;
+		if(num >= Mode.VALUES.length) return null;
+		return Mode.VALUES[num];
+	}
+	
+	private void drawModeSelector() {
+		final int size = 24;
+		
+		GL11.glDisable(GL11.GL_TEXTURE_2D);
+		GL11.glBegin(GL11.GL_QUADS);
+		for(Mode m : Mode.VALUES) {
+			if(m == curMode)
+				GL11.glColor3f(0, 1, 0);
+			else
+				GL11.glColor3f(0.75f, 0, 0);
+			int x = guiLeft + xSize + 2;
+			int y = guiTop + m.ordinal()*(size+4) + 6;
+			GL11.glVertex2f(x, y);
+			GL11.glVertex2f(x, y+size+2);
+			GL11.glVertex2f(x+size+2, y+size+2);
+			GL11.glVertex2f(x+size+2, y);
+		}
+		GL11.glEnd();
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
+		GL11.glColor3f(1, 1, 1);
+		
+		for(Mode m : Mode.VALUES) {
+			int x = guiLeft + xSize + 2;
+			int y = guiTop + m.ordinal()*(size+4) + 6;
+			drawTexturedModalRect(x+1, y+1, m.u, m.v, size, size);
+		}
+	}
+
 	private boolean validOnScreenTileCoords(int x, int y) {
 		return x >= 0 && y >= 0 && x < 20 && y < 15;
 	}
@@ -195,7 +267,9 @@ public class OpTableGUI extends GuiContainer {
 	protected void mouseClicked(int x, int y, int btn) {
 		//super.mouseClicked(x, y, btn);
 		
-		
+		Mode mode = getModeSelectorUnderMouse(x-guiLeft, y-guiTop);
+		if(mode != null)
+			curMode = mode;
 	}
 	
 	@Override
@@ -219,21 +293,24 @@ public class OpTableGUI extends GuiContainer {
 		if(!cont.guts.validCoords(tx, ty))
 			return;
 		
-		if((btn == 0 || btn == 1) && drawnPipeLayer != null) {
+		if(btn == 0) {
 			
-			OpTableContainer.DrawData dd = new OpTableContainer.DrawData();
-			dd.removeMode = drawnPipeLayer_removeMode;
-			dd.map = drawnPipeLayer;
-			cont.sendToServer(dd);
+			if(curMode == Mode.REMOVE_PIPE || curMode == Mode.PLACE_PIPE) {
+				if(drawnPipeLayer != null) {
+					OpTableContainer.DrawData dd = new OpTableContainer.DrawData();
+					dd.removeMode = curMode == Mode.REMOVE_PIPE;
+					dd.map = drawnPipeLayer;
+					cont.sendToServer(dd);
+					
+					cont.guts.finishDrawingPipes(drawnPipeLayer, curMode == Mode.REMOVE_PIPE);
+				}
+			}
 			
-			cont.guts.finishDrawingPipes(drawnPipeLayer, drawnPipeLayer_removeMode);
 			drawnPipeLayer = null;
 			
-		} else if(Mouse.isButtonDown(0) || Mouse.isButtonDown(1)) {
+		} else if(Mouse.isButtonDown(0) && (curMode == Mode.REMOVE_PIPE || curMode == Mode.PLACE_PIPE)) {
 			if(drawnPipeLayer == null)
 				drawnPipeLayer = new boolean[cont.guts.w][cont.guts.h];
-			
-			drawnPipeLayer_removeMode = Mouse.isButtonDown(1);
 			
 			//Guts.Tile oldTile = cont.guts.getTile(tx, ty);
 			//if(oldTile instanceof Guts.PipeTile || oldTile instanceof Guts.EmptyTile)

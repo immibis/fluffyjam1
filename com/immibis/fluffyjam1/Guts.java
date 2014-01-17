@@ -797,9 +797,6 @@ public final class Guts implements Serializable {
 				after.add(splitR);
 			}
 		}
-		
-		
-		int a=1;
 	}
 	
 	public void buildNetworks() {
