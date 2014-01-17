@@ -6,3 +6,5 @@ tile.immibis.fj1.t.name=Terrain-Outflow Intelligent Liquid Extraction Terminal
 
 death.attack.fj1imbds=%s failed biology 101
 death.attack.fj1imbds.plyer=%1$s failed biology 101 while escaping from %2$s
+
+itemGroup.fj1imb=Totally Random Surgery

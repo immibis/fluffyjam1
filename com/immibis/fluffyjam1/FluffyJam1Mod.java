@@ -88,6 +88,7 @@ public class FluffyJam1Mod implements IGuiHandler {
 	public static OneBlock block1;
 	public static Item itemSludge;
 	public static Block blockSludge;
+	public static CreativeTabs tab = new CreativeTabs("fj1imb") {public ItemStack getIconItemStack() {return new ItemStack(Item.bed);}};
 	
 	public static final int REAGENT_PER_BLOCK = 200;
 	public static final float REAGENT_PER_MILLIBUCKET_DRANK = 0.5f;

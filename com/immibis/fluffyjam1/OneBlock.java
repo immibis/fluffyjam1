@@ -17,7 +17,7 @@ public class OneBlock extends BlockContainer {
 		setHardness(0.5f);
 		setUnlocalizedName("immibis.fj1.t");
 		setTextureName("immibis_fj1:one");
-		setCreativeTab(CreativeTabs.tabDecorations);
+		setCreativeTab(FluffyJam1Mod.tab);
 	}
 	
 	@Override

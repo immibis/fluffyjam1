@@ -26,7 +26,7 @@ import net.minecraft.world.biome.BiomeGenBase;
 public class OpTableBlock extends BlockBed {
 	public OpTableBlock(int id) {
 		super(id);
-		setCreativeTab(CreativeTabs.tabDecorations);
+		setCreativeTab(FluffyJam1Mod.tab);
 		setHardness(0.2F);
 		setUnlocalizedName("immibis.fj1.optable");
 		disableStats();
