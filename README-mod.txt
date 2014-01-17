@@ -77,11 +77,10 @@ space available.
 
 Operating tables are crafted like so:
 
-ABC   A = iron axe
-WWW   B = iron sword
- D    C = iron pickaxe
-      W = wool
-      D = bed
+PPP   P = stone pickaxe
+SBS   S = stone sword
+AAA   A = stone axe
+      B = bed
 
 (the tools are what you use to operate on patients)
 

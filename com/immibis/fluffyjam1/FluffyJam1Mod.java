@@ -14,6 +14,7 @@ import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.ImmibisFJ1_ProtectedAccessProxy;
@@ -335,6 +336,15 @@ public class FluffyJam1Mod implements IGuiHandler {
 			'S', Block.stone,
 			'/', Item.stick
 			);
+		
+		GameRegistry.addRecipe(new ItemStack(blockOT),
+			"PPP",
+			"SBS",
+			"AAA",
+			'P', Item.pickaxeStone,
+			'S', Item.swordStone,
+			'A', Item.axeStone,
+			'B', Item.bed);
 		
 		NetworkRegistry.instance().registerGuiHandler(this, this);
 		NetworkRegistry.instance().registerChannel(new OpTableContainer.PacketHandler(), OpTableContainer.CHANNEL);
