@@ -76,7 +76,7 @@ public class OneTile extends TileEntity {
 				Block b = getBlockFor(k);
 				if(b != null)
 					worldObj.setBlock(x, y, z, b.blockID);
-				System.out.println(x+" "+y+" "+z);
+				//System.out.println(x+" "+y+" "+z);
 				my_buffer.remove(k, FluffyJam1Mod.REAGENT_PER_BLOCK);
 				return;
 			}

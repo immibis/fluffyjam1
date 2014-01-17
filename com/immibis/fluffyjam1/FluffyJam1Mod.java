@@ -29,6 +29,7 @@ import net.minecraft.network.packet.Packet1Login;
 import net.minecraft.network.packet.Packet250CustomPayload;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumMovingObjectType;
 import net.minecraft.util.Icon;
 import net.minecraft.world.World;
@@ -255,6 +256,11 @@ public class FluffyJam1Mod implements IGuiHandler {
 	
 	@SidedProxy(clientSide="com.immibis.fluffyjam1.ProxyClient", serverSide="com.immibis.fluffyjam1.ProxyBase")
 	public static ProxyBase proxy;
+	
+	public static DamageSource damageSource = new DamageSource("fj1imbds") {{
+		setDamageAllowedInCreativeMode();
+		setDamageBypassesArmor();
+	}};
 
 	@Mod.EventHandler
 	public void init(FMLInitializationEvent evt) {

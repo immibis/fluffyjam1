@@ -134,6 +134,8 @@ public class OpTableGUI extends GuiContainer {
 					drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 12, 6);
 				else if(t instanceof Guts.MouthTile)
 					drawReagents(t.nets[Guts.D_R].new_contents, px, py+3, 12, 6);
+				else if(t instanceof Guts.SpleenTile)
+					drawReagents(t.nets[Guts.D_L].new_contents, px, py+3, 6, 6);
 			}
 		
 		GL11.glEnd();
@@ -189,6 +191,8 @@ public class OpTableGUI extends GuiContainer {
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, ((Guts.ValveTile)t).open ? 168 : 156, 240, 12, 12);
 				else if(t instanceof Guts.LegTile)
 					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 60, 240, 12, 12);
+				else if(t instanceof Guts.SpleenTile)
+					drawTexturedModalRect(guiLeft + 8 + 12*x, guiTop + 6 + 12*y, 180, 240, 12, 12);
 				
 				switch(curMode) {
 				case REMOVE_PIPE:

@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
+import net.minecraft.util.MathHelper;
+
 import com.google.common.collect.ArrayTable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -98,6 +100,7 @@ public final class Guts implements Serializable {
 		case 'H': return new HeartTile();
 		case 'L': return new LungTile();
 		case 'P': return new PipeTile(parseDirList(def.substring(1)));
+		case 'E': return new SpleenTile();
 		case 'I': return new IntestineTile(def.equals("IH"));
 		case 'X': return new PipeCrossTile(parseDirList(def.substring(1)), 15^parseDirList(def.substring(1)));
 		case 'T': return new TankTile();
@@ -154,7 +157,7 @@ public final class Guts implements Serializable {
 	public static final float BASE_METABOLIC_WASTE_RATIO = 0.35f;
 	
 	// amount of food/tick expected to be used when not doing anything
-	public static final float FOOD_USE_RATE_IDLE = (METAB_RATE_BRAIN + METAB_RATE_HEART) * BASE_METABOLIC_FOOD_RATIO;
+	public static final float FOOD_USE_RATE_IDLE = (METAB_RATE_BRAIN + METAB_RATE_HEART + 2*METAB_RATE_LEG) * BASE_METABOLIC_FOOD_RATIO;
 	
 	
 	public static class Tile implements Serializable {
@@ -279,8 +282,10 @@ public final class Guts implements Serializable {
 			Reagents nc = nets[D_R].new_contents;
 			nc.addRespectingCapacity(drowning ? Reagent.R_WATER : Reagent.R_OXYGEN, EXCH_VOLUME);
 			
-			if(to_remove.get(Reagent.R_MWASTE) == 0)
+			if(to_remove.get(Reagent.R_MWASTE) < 0.01f)
 				to_remove.set(Reagent.R_WATER, 0);
+			
+			to_remove.set(Reagent.R_OXYGEN, 0);
 			
 			if(listener != null)
 				listener.eject(to_remove, 3);
@@ -347,9 +352,6 @@ public final class Guts implements Serializable {
 			
 			transfer.pourInto(nets[D_L].new_contents);
 			transfer.pourInto(nets[D_R].new_contents);
-			
-			if(nets[D_R].new_contents.get(Reagent.R_BLOOD) < nets[D_R].new_contents.capacity * TARGET_BLOOD_PRESSURE)
-				nets[D_R].new_contents.addRespectingCapacity(Reagent.R_BLOOD, 8); // TODO should not be in HeartTile
 		}
 		
 		@Override
@@ -621,7 +623,7 @@ public final class Guts implements Serializable {
 	}
 	
 	// 0 = dead, 0-0.5 = coma, 0.5-1 = various symptoms, 0 = normal
-	public float brain_function;
+	public float brain_function = 1;
 	
 	// 0 = empty, 1 = full
 	public float ex1bar, ex2bar, fbar, wbar, oxygen_level;
@@ -630,6 +632,20 @@ public final class Guts implements Serializable {
 	
 	public float leg_energy_level;
 	public boolean is_sprinting;
+	
+	public static class SpleenTile extends Tile {
+		private static final long serialVersionUID = 1L;
+		
+		void initNets() {
+			initNet(DM_L);
+		}
+		
+		@Override
+		public void tick() {
+			if(nets[D_L].new_contents.get(Reagent.R_BLOOD) < nets[D_L].new_contents.capacity * TARGET_BLOOD_PRESSURE)
+				nets[D_L].new_contents.addRespectingCapacity(Reagent.R_BLOOD, 1f); // was 8
+		}
+	}
 	
 	public class LegTile extends Tile {
 		private static final long serialVersionUID = 1L;
@@ -659,8 +675,8 @@ public final class Guts implements Serializable {
 		}
 		
 		// So you don't die immediately.
-		float startup_food = FOOD_USE_RATE_IDLE * 200f;
-		float startup_water = 50;
+		float startup_food = FOOD_USE_RATE_IDLE * 2000f;
+		float startup_water = 150;
 		
 		@Override
 		public void tick() {
@@ -676,16 +692,20 @@ public final class Guts implements Serializable {
 			// normal: <10, coma: 100+, death: 200+
 			float toxin_rel = (blood.contents.get(Reagent.R_MWASTE) + blood.contents.get(Reagent.R_STOOL)*5) / blood.contents.get(Reagent.R_BLOOD) * 70;
 			
-			if(toxin_rel < 10)
-				brain_function = 1;
-			else if(toxin_rel < 200)
-				brain_function = 1 - toxin_rel / 200;
-			else
-				brain_function = 0;
+			float newbf = 0;
 			
-			float energy_avail_pct = energy / METAB_RATE_BRAIN;
-			if(energy_avail_pct < 0.05f)
-				brain_function = Math.min(brain_function, 0.75f);
+			if(toxin_rel < 10)
+				newbf = 1;
+			else if(toxin_rel < 200)
+				newbf = 1 - (toxin_rel - 10) / 190;
+			else
+				newbf = 0;
+			
+			newbf *= energy / METAB_RATE_BRAIN;
+			
+			final float MAXRATE = 0.05f / 30f; // max 30 seconds from conscious to death
+			
+			brain_function = MathHelper.clamp_float(newbf, brain_function-MAXRATE, brain_function+MAXRATE);
 			
 			fbar = Math.min(1, blood.contents.get(Reagent.R_FOOD) / (blood.contents.get(Reagent.R_BLOOD) * Reagent.BLOOD_CAP[Reagent.R_FOOD]));
 			wbar = Math.min(1, blood.contents.get(Reagent.R_WATER) / (blood.contents.get(Reagent.R_BLOOD) * Reagent.BLOOD_CAP[Reagent.R_WATER]));

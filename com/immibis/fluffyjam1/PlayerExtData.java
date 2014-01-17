@@ -82,6 +82,8 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 		return (PlayerExtData)pl.getExtendedProperties(EXT_PROP_ID);
 	}
 	
+	int ticksSinceDamage = 0;
+	
 	public void tick() {
 		data.leg_energy_level = 1;
 		data.is_sprinting = player.isSprinting();
@@ -94,6 +96,16 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 		
 		player.playerNetServerHandler.sendPacketToPlayer(FluffyJam1Mod.TinyPacketHandler.getBrainFunctionPacket(data.brain_function, data.ex1bar, data.ex2bar, data.fbar, data.wbar));
 		player.setAir((int)(300 * data.oxygen_level));
+		
+		if(data.brain_function > 0.5f) {
+			ticksSinceDamage = 0;
+		} else {
+			int damageInterval = (int)(50 * (2*data.brain_function));
+			if(++ticksSinceDamage >= damageInterval) {
+				ticksSinceDamage = 0;
+				player.attackEntityFrom(FluffyJam1Mod.damageSource, 1.0f);
+			}
+		} 
 		
 		data.drowning = player.isInsideOfMaterial(Material.water);
 	}
