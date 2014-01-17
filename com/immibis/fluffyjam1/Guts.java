@@ -418,8 +418,8 @@ public final class Guts implements Serializable {
 			final float MWASTE_REMOVE_RATE = 0.8f;
 			final float STOOL_TO_MWASTE_RATE = 10f;
 			
-			float s = Math.min(transfer.get(Reagent.R_STOOL), transfer.getDissolveSpace(Reagent.R_MWASTE) / STOOL_TO_MWASTE_RATE);
-			transfer.remove(Reagent.R_STOOL, s);
+			float s = Math.min(transfer.get(Reagent.R_FWASTE), transfer.getDissolveSpace(Reagent.R_MWASTE) / STOOL_TO_MWASTE_RATE);
+			transfer.remove(Reagent.R_FWASTE, s);
 			transfer.add(Reagent.R_MWASTE, s*STOOL_TO_MWASTE_RATE);
 			
 			float transfer_water_pct = transfer.get(Reagent.R_WATER) / transfer.get(Reagent.R_BLOOD);
@@ -558,7 +558,7 @@ public final class Guts implements Serializable {
 				
 			float flow = calcFlow(net_in, net_out);
 			//flow = Math.min(flow, 1);
-			flow = Math.max(flow, 0.1f);
+			flow = Math.max(flow, 0.35f);
 			
 			Reagents blood = net_blood.contents, new_blood = net_blood.new_contents;
 			//float max_food_transfer = new_blood.getDissolveSpace(Reagent.R_FOOD);
@@ -574,7 +574,7 @@ public final class Guts implements Serializable {
 			float used_food = avail_food * 0.3f;
 			float leftover_food = used_food - new_blood.dissolve(Reagent.R_FOOD, used_food);
 			transfer.remove(Reagent.R_FOOD, used_food);
-			transfer.add(Reagent.R_STOOL, used_food*1.2f + leftover_food);
+			transfer.add(Reagent.R_FWASTE, used_food*1.2f + leftover_food);
 			
 			float avail_water = transfer.get(Reagent.R_WATER);
 			if(avail_water > 0)
@@ -584,7 +584,8 @@ public final class Guts implements Serializable {
 			
 			transfer.pourInto(net_out.new_contents);
 			transfer.pourInto(net_blood.new_contents);
-			transfer.pourInto(net_in.new_contents);
+			//transfer.pourInto(net_in.new_contents);
+			net_in.new_contents.add(transfer);
 		}
 		
 		@Override
@@ -684,13 +685,13 @@ public final class Guts implements Serializable {
 			
 			float energy = metabolize(blood.contents, blood.new_contents, METAB_RATE_BRAIN, 1);
 			float mwaste_pct = blood.contents.get(Reagent.R_MWASTE) / blood.contents.get(Reagent.R_BLOOD);
-			float stool_pct = blood.contents.get(Reagent.R_STOOL) / blood.contents.get(Reagent.R_BLOOD);
+			float stool_pct = blood.contents.get(Reagent.R_FWASTE) / blood.contents.get(Reagent.R_BLOOD);
 			
 			if(startup_food > 0) startup_food -= blood.new_contents.dissolve(Reagent.R_FOOD, startup_food);
 			if(startup_water > 0) startup_water -= blood.new_contents.dissolve(Reagent.R_WATER, startup_water);
 
 			// normal: <10, coma: 100+, death: 200+
-			float toxin_rel = (blood.contents.get(Reagent.R_MWASTE) + blood.contents.get(Reagent.R_STOOL)*5) / blood.contents.get(Reagent.R_BLOOD) * 70;
+			float toxin_rel = (blood.contents.get(Reagent.R_MWASTE) + blood.contents.get(Reagent.R_FWASTE)*5) / blood.contents.get(Reagent.R_BLOOD) * 70;
 			
 			float newbf = 0;
 			

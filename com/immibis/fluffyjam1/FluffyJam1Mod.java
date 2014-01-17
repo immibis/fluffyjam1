@@ -32,6 +32,7 @@ import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumMovingObjectType;
 import net.minecraft.util.Icon;
+import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
@@ -86,6 +87,7 @@ public class FluffyJam1Mod implements IGuiHandler {
 	public static Block blockSludge;
 	
 	public static final int REAGENT_PER_BLOCK = 200;
+	public static final float REAGENT_PER_MILLIBUCKET_DRANK = 0.5f;
 	
 	public static final int GUI_OP_TABLE = 1;
 	
@@ -112,6 +114,8 @@ public class FluffyJam1Mod implements IGuiHandler {
 				PlayerExtData.get(((NetServerHandler)handler).playerEntity).empty(1);
 			if(p.uniqueID == 2)
 				PlayerExtData.get(((NetServerHandler)handler).playerEntity).empty(2);
+			if(p.uniqueID == 10)
+				drink(((NetServerHandler)handler).playerEntity);
 			if(p.uniqueID == 100)
 				proxy.stopSprinting();
 		}
@@ -356,6 +360,37 @@ public class FluffyJam1Mod implements IGuiHandler {
 			ImmibisFJ1_ProtectedAccessProxy.setFoodStats((EntityPlayerMP)evt.entity, link.fakeFoodStats);
 		} else if(evt.entity instanceof EntityPlayer && evt.world.isRemote)
 			ImmibisFJ1_ProtectedAccessProxy.setFoodStats((EntityPlayer)evt.entity, new PlayerExtData.ClientFakeFoodStats());
+	}
+	
+	@ForgeSubscribe
+	public void onInteract(PlayerInteractEvent evt) {
+		if(!evt.entityPlayer.worldObj.isRemote)
+			return;
+		if(evt.action == PlayerInteractEvent.Action.RIGHT_CLICK_AIR || evt.action == PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK) {
+			if(evt.entityPlayer.inventory.getCurrentItem() == null) {
+				MovingObjectPosition rt = OpTableItem.rayTraceFromPlayerForBuckets(evt.entityPlayer);
+				int hitBlockID = evt.entityPlayer.worldObj.getBlockId(rt.blockX, rt.blockY, rt.blockZ);
+				if(rt != null && rt.typeOfHit == EnumMovingObjectType.TILE && (hitBlockID == Block.waterMoving.blockID || hitBlockID == Block.waterStill.blockID)) {
+					// calls drink(evt.entityPlayer) on the server
+					PacketDispatcher.sendPacketToServer(TinyPacketHandler.getActionPacket(10));
+					evt.setCanceled(true);
+					evt.useBlock = Event.Result.DENY;
+					evt.useItem = Event.Result.DENY;
+				}
+			}
+		}
+	}
+	
+	private static void drink(EntityPlayer ply) {
+		if(!(ply instanceof EntityPlayerMP))
+			return;
+		
+		MovingObjectPosition rt = OpTableItem.rayTraceFromPlayerForBuckets(ply);
+		int hitBlockID = ply.worldObj.getBlockId(rt.blockX, rt.blockY, rt.blockZ);
+		if(rt != null && rt.typeOfHit == EnumMovingObjectType.TILE && (hitBlockID == Block.waterMoving.blockID || hitBlockID == Block.waterStill.blockID)) {
+			ply.worldObj.setBlockToAir(rt.blockX, rt.blockY, rt.blockZ);
+			PlayerExtData.get((EntityPlayerMP)ply).drink(1000);
+		}
 	}
 	
 	@ForgeSubscribe

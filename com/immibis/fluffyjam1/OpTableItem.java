@@ -3,14 +3,21 @@ package com.immibis.fluffyjam1;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockBed;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.MathHelper;
+import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 
 public class OpTableItem extends ItemBlock {
 	public OpTableItem(int par1) {
 		super(par1);
+	}
+	
+	public static MovingObjectPosition rayTraceFromPlayerForBuckets(EntityPlayer ply) {
+		// why is this on Item? and why is it protected?
+		return ((OpTableItem)Item.itemsList[FluffyJam1Mod.blockOT.blockID]).getMovingObjectPositionFromPlayer(ply.worldObj, ply, true);
 	}
 
 	public boolean onItemUse(ItemStack par1ItemStack, EntityPlayer par2EntityPlayer, World par3World, int par4, int par5, int par6, int par7, float par8, float par9, float par10)

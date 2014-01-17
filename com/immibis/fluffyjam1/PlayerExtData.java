@@ -34,6 +34,7 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 	
 	// each food point gives enough to run idle for this many ticks (in normal configuration)
 	public static final int TICKS_PER_FOOD_POINT = 30 * 20;
+	public static final float WATER_TO_FOOD_RATIO = 1f;
 	
 	public static class ClientFakeFoodStats extends FoodStats {
 		@Override public void addExhaustion(float par1) {}
@@ -52,7 +53,9 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 		@Override
 		public void addStats(int food, float nourishmentValue) {
 			float saturation = food * nourishmentValue * 2.0f;
-			data.mouthBuffer.add(Reagent.R_FOOD, (food + saturation) * TICKS_PER_FOOD_POINT * Guts.FOOD_USE_RATE_IDLE);
+			float food_r = (food + saturation) * TICKS_PER_FOOD_POINT * Guts.FOOD_USE_RATE_IDLE;
+			data.mouthBuffer.add(Reagent.R_FOOD, food_r);
+			data.mouthBuffer.add(Reagent.R_WATER, food_r * WATER_TO_FOOD_RATIO);
 		}
 		@Override
 		public void onUpdate(EntityPlayer par1EntityPlayer) {
@@ -75,7 +78,7 @@ public class PlayerExtData implements IExtendedEntityProperties, GutsListener {
 	}
 	
 	public void drink(int millibuckets) {
-		data.mouthBuffer.add(Reagent.R_WATER, millibuckets);
+		data.mouthBuffer.add(Reagent.R_WATER, millibuckets * FluffyJam1Mod.REAGENT_PER_MILLIBUCKET_DRANK);
 	}
 	
 	

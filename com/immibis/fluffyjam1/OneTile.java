@@ -10,10 +10,16 @@ public class OneTile extends TileEntity {
 	private int x, y = Integer.MIN_VALUE, z;
 	private boolean full, sleeping = true;
 	
+	final int RANGE = 12;
+	
 	Reagents my_buffer = new Reagents();
 	{my_buffer.capacity = 1500 * Reagent.COUNT;}
 	
 	private boolean isValid(int x, int y, int z) {
+		if(Math.abs(x - xCoord) > RANGE)
+			return false;
+		if(Math.abs(z - zCoord) > RANGE)
+			return false;
 		if(!worldObj.blockExists(x, y, z))
 			return false;
 		if(worldObj.isAirBlock(x, y, z))
@@ -54,7 +60,7 @@ public class OneTile extends TileEntity {
 		y = yCoord-1;
 		z = zCoord;
 		
-		for(int k = 0; k < 20 && randomStep(); k++)
+		for(int k = 0; k < 2*RANGE && randomStep(); k++)
 			;
 		
 		if(!isValid(x, y, z))
@@ -96,7 +102,7 @@ public class OneTile extends TileEntity {
 	}
 	
 	public static void convertForBlockPlacement(Reagents r) {
-		r.convertAll(Reagent.R_FOOD, Reagent.R_STOOL);
+		r.convertAll(Reagent.R_FOOD, Reagent.R_FWASTE);
 		
 		//if(r.get(Reagent.R_WATER) < r.get(Reagent.R_MWASTE)*1.5f)
 			r.convertAll(Reagent.R_WATER, Reagent.R_MWASTE);
@@ -107,7 +113,7 @@ public class OneTile extends TileEntity {
 		case Reagent.R_BLOOD: return null;
 		case Reagent.R_MWASTE: return FluffyJam1Mod.blockF_u;
 		case Reagent.R_OXYGEN: return null;
-		case Reagent.R_STOOL: return FluffyJam1Mod.blockSludge;
+		case Reagent.R_FWASTE: return FluffyJam1Mod.blockSludge;
 		}
 		System.err.println("getBlockFor unexpected reagent "+id);
 		return null;
